@@ -1,12 +1,19 @@
-using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class DeckManager : MonoBehaviour
 {
-    public List<CardData> deck = new List<CardData>();
-
     void Start()
     {
-        deck = new List<CardData>(CardSaveManager.loadedCards);
+        // CardInstance[] Å® IEnumerable<CardData>
+        var cardDataList = CardSaveManager.loadedCards.Select(ci => ci.template);
+
+        SomeMethodExpectingCardData(cardDataList); // IEnumerable<CardData> ÇìnÇ∑
+    }
+
+    void SomeMethodExpectingCardData(System.Collections.Generic.IEnumerable<CardData> cards)
+    {
+        foreach (var card in cards)
+            Debug.Log(card.cardName);
     }
 }

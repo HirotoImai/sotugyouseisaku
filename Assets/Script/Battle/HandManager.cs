@@ -1,46 +1,38 @@
-using System.Collections.Generic;
+// HandManager.cs
 using UnityEngine;
 
 public class HandManager : MonoBehaviour
 {
-    public GameObject cardButtonPrefab;
-    public Transform handArea;
-    public int handSize = 3; // 手札枚数
+    public CardLoadManager loadManager;  // ← インスペクターで設定
+    private CardInstance[] loadedCards;
 
     void Start()
     {
-        DrawRandomHand();
-    }
+        loadedCards = loadManager.LoadCards();
 
-    void DrawRandomHand()
-    {
-        var allCards = CardSaveManager.loadedCards;
-        if (allCards == null || allCards.Count == 0)
+        if (loadedCards == null || loadedCards.Length == 0)
         {
-            Debug.LogWarning("カードがロードされていません。");
+            Debug.LogError("カードがロードされていません。");
             return;
         }
 
-        List<CardData> handCards = new List<CardData>();
-        List<int> usedIndexes = new List<int>();
+        Debug.Log("ロードされたカード数: " + loadedCards.Length);
 
-        for (int i = 0; i < handSize && i < allCards.Count; i++)
+        // 例：最初の3枚をハンドに追加
+        DrawRandomHand();
+    }
+
+    public void DrawRandomHand()
+    {
+        for (int i = 0; i < 3; i++)
         {
-            int index;
-            do { index = Random.Range(0, allCards.Count); }
-            while (usedIndexes.Contains(index));
+            int index = Random.Range(0, loadedCards.Length);
+            CardInstance c = loadedCards[index];
 
-            usedIndexes.Add(index);
-            handCards.Add(allCards[index]);
+            Debug.Log($"カード: {c.template.cardName} の色: R={c.template.mainColor.r}, G={c.template.mainColor.g}, B={c.template.mainColor.b}");
+
+            // 表示処理へ渡す
+            // CardButtonView などへ渡す処理がここに来る
         }
-
-        foreach (var data in handCards)
-        {
-            GameObject cardObj = Instantiate(cardButtonPrefab, handArea);
-            var view = cardObj.GetComponent<CardButtonView>();
-            view.Setup(data);
-        }
-
-        Debug.Log($"手札に{handCards.Count}枚を追加しました");
     }
 }

@@ -76,7 +76,7 @@ public class PlayerManager_RT : MonoBehaviour
         currentMana -= data.cost;
         Debug.Log($"{data.cardName}（ATK:{data.attack}）を出撃！");
 
-        BattleManager_RT.Instance.SpawnCard(data, isPlayer);
+        BattleManager_RT.Instance.SpawnCard(new CardInstance(cardData, jsonCard));
     }
 
     public void TakeDamage(int amount)

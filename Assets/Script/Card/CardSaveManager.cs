@@ -1,152 +1,95 @@
-using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
+using System.IO;
 
 public class CardSaveManager : MonoBehaviour
 {
-    public NameChanger nameChanger;
-    public ImageColorImporter colorImporter;
-    public CostManager costManager;
-
-    public static List<CardData> loadedCards = new List<CardData>(); // 全カードデータ
-    public static CardData lastCreatedCard; // 直近のカード
-
-    private string savePath;
-
-    void Awake()
+    public string saveFileName = "cards.json";
+    public static CardInstance[] loadedCards; // ★追加
+    private void Awake()
     {
+        loadedCards = FindObjectOfType<CardLoadManager>().LoadCards();
+    }
+    [System.Serializable]
 
-        Debug.Log("CardSaveManager Awake");
-        savePath = Path.Combine(Application.persistentDataPath, "cards.json");
-        Debug.Log($"カードデータ保存先: {savePath}");
-        LoadAllCards();
+    public class CardDataSerializable
+    {
+        public string cardName;
+        public int cost;
+        public int attack;
+        public int hp;
+        public float r, g, b, a;
+        public string imageName;
     }
 
-    public void OnClickSave()
+    [System.Serializable]
+    public class CardDataList
     {
-        if (colorImporter.displayImage.sprite == null)
+        public CardDataSerializable[] cards;
+    }
+
+    public void OnClickSave(CardData[] cardDatas)
+    {
+        CardDataList list = new CardDataList();
+        list.cards = new CardDataSerializable[cardDatas.Length];
+
+        for (int i = 0; i < cardDatas.Length; i++)
         {
-            Debug.LogWarning("画像が選択されていません");
-            return;
+            CardData data = cardDatas[i];
+            CardDataSerializable serial = new CardDataSerializable();
+
+            serial.cardName = data.cardName;
+            serial.cost = data.cost;
+            serial.attack = data.attack;
+            serial.hp = data.hp;
+
+            serial.r = data.mainColor.r;
+            serial.g = data.mainColor.g;
+            serial.b = data.mainColor.b;
+            serial.a = data.mainColor.a;
+
+            serial.imageName = data.image != null ? data.image.name : "";
+
+            list.cards[i] = serial;
         }
 
-        CardDataSerializable newCard = new CardDataSerializable
-        {
-            cardName = nameChanger.nameInputField.text,
-            cost = costManager.cost_dropdown.value,
-            attack = costManager.atack_dropdown.value,
-            hp = costManager.hp_dropdown.value,
-            color = ColorUtility.ToHtmlStringRGB(colorImporter.displayImage.color),
-            imagePath = "image_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png"
-        };
+        string json = JsonUtility.ToJson(list, true);
+        File.WriteAllText(Path.Combine(Application.persistentDataPath, saveFileName), json);
 
-        SaveCardImage(colorImporter.displayImage.sprite.texture, newCard.imagePath);
-
-        // 既存のカードリストをロード
-        List<CardDataSerializable> allCards = LoadAllCardSerializable();
-        allCards.Add(newCard);
-
-        string json = JsonUtility.ToJson(new CardDataListWrapper(allCards), true);
-        File.WriteAllText(savePath, json);
-
-        lastCreatedCard = ConvertToCardData(newCard);
-
-        Debug.Log($"カードを追加保存しました: {newCard.cardName}");
+        Debug.Log("カードを保存しました");
     }
 
-    public void LoadAllCards()
+    public CardData[] Load()
     {
-        loadedCards.Clear();
-        List<CardDataSerializable> loadedList = LoadAllCardSerializable();
-
-        foreach (var c in loadedList)
-        {
-            Texture2D tex = LoadCardImage(c.imagePath);
-            Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
-
-            loadedCards.Add(new CardData
-            {
-                cardName = c.cardName,
-                cost = c.cost,
-                attack = c.attack,
-                hp = c.hp,
-                image = sprite,
-                mainColor = color
-            });
-        }
-
-        Debug.Log($"カードロード完了: {loadedCards.Count}枚");
-    }
-
-    List<CardDataSerializable> LoadAllCardSerializable()
-    {
-        if (!File.Exists(savePath))
-            return new List<CardDataSerializable>();
-
-        string json = File.ReadAllText(savePath);
-        CardDataListWrapper wrapper = JsonUtility.FromJson<CardDataListWrapper>(json);
-        return wrapper.cards ?? new List<CardDataSerializable>();
-    }
-
-    void SaveCardImage(Texture2D texture, string fileName)
-    {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-        byte[] pngData = texture.EncodeToPNG();
-        File.WriteAllBytes(path, pngData);
-    }
-
-    Texture2D LoadCardImage(string fileName)
-    {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
+        string path = Path.Combine(Application.persistentDataPath, saveFileName);
         if (!File.Exists(path))
         {
-            Debug.LogWarning("カード画像が見つかりません: " + path);
-            return Texture2D.whiteTexture;
+            Debug.LogWarning("保存ファイルがありません");
+            return new CardData[0];
         }
 
-        byte[] bytes = File.ReadAllBytes(path);
-        Texture2D tex = new Texture2D(2, 2);
-        tex.LoadImage(bytes);
-        return tex;
-    }
+        string json = File.ReadAllText(path);
+        CardDataList list = JsonUtility.FromJson<CardDataList>(json);
 
-    CardData ConvertToCardData(CardDataSerializable c)
-    {
-        Texture2D tex = LoadCardImage(c.imagePath);
-        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-        ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
+        CardData[] result = new CardData[list.cards.Length];
 
-        return new CardData
+        for (int i = 0; i < list.cards.Length; i++)
         {
-            cardName = c.cardName,
-            cost = c.cost,
-            attack = c.attack,
-            hp = c.hp,
-            image = sprite,
-            mainColor = color
-        };
+            CardDataSerializable serial = list.cards[i];
+
+            CardData data = ScriptableObject.CreateInstance<CardData>();
+
+            data.cardName = serial.cardName;
+            data.cost = serial.cost;
+            data.attack = serial.attack;
+            data.hp = serial.hp;
+
+            data.mainColor = new Color(serial.r, serial.g, serial.b, serial.a);
+
+            data.image = Resources.Load<Sprite>("Cards/" + serial.imageName);
+
+            result[i] = data;
+        }
+
+        return result;
     }
-}
-
-[System.Serializable]
-public class CardDataListWrapper
-{
-    public List<CardDataSerializable> cards;
-
-    public CardDataListWrapper(List<CardDataSerializable> cards)
-    {
-        this.cards = cards;
-    }
-}
-
-[System.Serializable]
-public class CardDataSerializable
-{
-    public string cardName;
-    public int cost;
-    public int attack;
-    public int hp;
-    public string color;
-    public string imagePath;
 }

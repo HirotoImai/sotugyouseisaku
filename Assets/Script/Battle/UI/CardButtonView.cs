@@ -4,60 +4,34 @@ using TMPro;
 
 public class CardButtonView : MonoBehaviour
 {
-    public Image backgroundImage;
     public Image cardImage;
-    public TMP_Text cardNameText;
-    public TMP_Text statsText; // Cost, Atk, HPなどを表示する用
+    public Image colorPanel;   // 色をつけたい UI
+    public TextMeshProUGUI nameText;
+    public TextMeshProUGUI costText;
+    public TextMeshProUGUI atkText;
+    public TextMeshProUGUI hpText;
+    private CardInstance owner;
 
-    private CardData data; // このカードの情報を保持
-    private PlayerManager_RT owner; // クリック時に通知する相手
-
-    public void Setup(CardData data)
+    public void SetOwner(CardInstance card)
     {
-        this.data = data;
-
-        if (cardImage != null)
-        {
-            cardImage.sprite = data.image;
-            cardImage.color = data.mainColor;
-        }
-
-        if (cardNameText != null)
-            cardNameText.text = data.cardName;
-
-        if (statsText != null)
-            statsText.text = $"Cost:{data.cost}  Atk:{data.attack}  HP:{data.hp}";
-
-        // ここで色を確認
-        Debug.Log($"カード: {data.cardName} の色: R={data.mainColor.r}, G={data.mainColor.g}, B={data.mainColor.b}, A={data.mainColor.a}");
+        owner = card;
+        // UI 更新など必要に応じて追加
     }
-
-    // PlayerManager を外部からセットするためのメソッド
-    public void SetOwner(PlayerManager_RT owner)
+    public void Setup(CardInstance card)
     {
-        this.owner = owner;
-    }
+        // カード名・能力
+        nameText.text = card.cardName;
+        costText.text = card.cost.ToString();
+        atkText.text = card.attack.ToString();
+        hpText.text = card.hp.ToString();
 
-    // ボタンの OnClick に割り当て
-    public void OnClick()
-    {
-        if (data == null)
-        {
-            Debug.LogWarning("CardButtonView: data がセットされていません");
-            return;
-        }
+        // **画像反映**
+        if (card.image != null)
+            cardImage.sprite = card.image;
 
-        if (owner != null)
-        {
-            owner.DeployCard(data);
-        }
-        else
-        {
-            Debug.Log($"カードをクリック: {data.cardName}（owner未設定）");
-        }
-    }
-    public void Highlight(bool enable)
-    {
-        GetComponent<Image>().color = enable ? Color.yellow : Color.white;
+        // **色反映**
+        colorPanel.color = card.mainColor;
+
+        Debug.Log($"カード:{card.cardName} の色: {card.mainColor}");
     }
 }

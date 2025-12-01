@@ -23,7 +23,7 @@ public class CardDatabase : MonoBehaviour
         // JSON で保存されたカードも追加
         allCards.AddRange(CardSaveManager.loadedCards);
 
-        Debug.Log($"カードデータ合計: {allCards.Count} 枚（固定:{fixedCards.Count}, 作成:{CardSaveManager.loadedCards.Count}）");
+        Debug.Log($"カードデータ合計: {allCards.Count} 枚（固定:{fixedCards.Count}, 作成:{CardSaveManager.loadedCards.Length}）");
     }
 
     public CardData GetRandomCard()
