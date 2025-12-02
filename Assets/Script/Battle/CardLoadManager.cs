@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.IO;
+using System.Collections.Generic;
 
 public class CardLoadManager : MonoBehaviour
 {
@@ -17,26 +18,25 @@ public class CardLoadManager : MonoBehaviour
         string jsonText = File.ReadAllText(path);
         JsonCardDataList list = JsonUtility.FromJson<JsonCardDataList>(jsonText);
 
-        CardInstance[] result = new CardInstance[list.cards.Length];
+        List<CardInstance> result = new List<CardInstance>();
 
         for (int i = 0; i < list.cards.Length; i++)
         {
             JsonCardData jsonCard = list.cards[i];
 
-            // ★テンプレート読み込み（CardData を使う）
+            // ★テンプレートが名前で Resources から存在するか？
             CardData template = Resources.Load<CardData>("Cards/" + jsonCard.cardName);
+
             if (template == null)
             {
                 Debug.LogWarning("テンプレートが見つからない: " + jsonCard.cardName);
-                continue;
+                continue; // 絶対に null を result に入れない
             }
 
-            // ★CardInstance の仕様に合わせて生成（template + json）
             CardInstance instance = new CardInstance(template, jsonCard);
-
-            result[i] = instance;
+            result.Add(instance);
         }
 
-        return result;
+        return result.ToArray();
     }
 }

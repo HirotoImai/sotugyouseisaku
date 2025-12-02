@@ -1,38 +1,50 @@
-// HandManager.cs
 using UnityEngine;
 
 public class HandManager : MonoBehaviour
 {
-    public CardLoadManager loadManager;  // ← インスペクターで設定
-    private CardInstance[] loadedCards;
+    public CardButtonView[] cardSlots;
+    public CardData[] templateCards;
+
+    private CardInstance[] allCards;
 
     void Start()
     {
-        loadedCards = loadManager.LoadCards();
+        // 保存カード読み込み（CardInstance[]）
+        var saved = CardSaveManager.loadedCards;
 
-        if (loadedCards == null || loadedCards.Length == 0)
+        // テンプレートカードから CardInstance を生成
+        var tempInstances = new CardInstance[templateCards.Length];
+        for (int i = 0; i < templateCards.Length; i++)
         {
-            Debug.LogError("カードがロードされていません。");
+            // JsonCardData が無いので null を渡す
+            tempInstances[i] = new CardInstance(templateCards[i], null);
+        }
+
+        // 2種類のカードを結合
+        int total = saved.Length + tempInstances.Length;
+        allCards = new CardInstance[total];
+
+        int index = 0;
+        foreach (var c in saved)
+            allCards[index++] = c;
+        foreach (var c in tempInstances)
+            allCards[index++] = c;
+
+        Debug.Log($"HandManager: カードプール {total} 枚");
+    }
+
+    public void DrawHand(int drawCount)
+    {
+        if (allCards == null || allCards.Length == 0)
+        {
+            Debug.LogWarning("HandManager: カードがロードされていません。");
             return;
         }
 
-        Debug.Log("ロードされたカード数: " + loadedCards.Length);
-
-        // 例：最初の3枚をハンドに追加
-        DrawRandomHand();
-    }
-
-    public void DrawRandomHand()
-    {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < cardSlots.Length && i < drawCount; i++)
         {
-            int index = Random.Range(0, loadedCards.Length);
-            CardInstance c = loadedCards[index];
-
-            Debug.Log($"カード: {c.template.cardName} の色: R={c.template.mainColor.r}, G={c.template.mainColor.g}, B={c.template.mainColor.b}");
-
-            // 表示処理へ渡す
-            // CardButtonView などへ渡す処理がここに来る
+            int r = Random.Range(0, allCards.Length);
+            cardSlots[i].SetOwner(allCards[r]);
         }
     }
 }

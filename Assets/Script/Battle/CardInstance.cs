@@ -18,7 +18,13 @@ public class CardInstance
         cost = json.cost;
         attack = json.attack;
         hp = json.hp;
-
+        this.template = template;
+        cardName = template.cardName;
+        cost = template.cost;
+        attack = template.attack;
+        hp = template.hp;
+        mainColor = template.mainColor;
+        image = template.image;
         // êF
         if (!string.IsNullOrEmpty(json.color))
             ColorUtility.TryParseHtmlString("#" + json.color, out mainColor);

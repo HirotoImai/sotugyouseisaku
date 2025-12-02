@@ -1,34 +1,21 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Linq;
 
-public class CardDatabase : MonoBehaviour
+public class CardDataBase : MonoBehaviour
 {
-    public static CardDatabase Instance;
+    public static CardDataBase Instance;
 
-    public List<CardData> fixedCards = new List<CardData>(); // Resources の固定カード
-    public List<CardData> allCards = new List<CardData>();   // 固定 + 作成カード
-
-    void Awake()
+    private void Awake()
     {
         Instance = this;
-
-        // Resources から固定カードをロード
-        CardData[] loaded = Resources.LoadAll<CardData>("Cards");
-        fixedCards.AddRange(loaded);
-
-        // まず allCards に固定カードを追加
-        allCards.Clear();
-        allCards.AddRange(fixedCards);
-
-        // JSON で保存されたカードも追加
-        allCards.AddRange(CardSaveManager.loadedCards);
-
-        Debug.Log($"カードデータ合計: {allCards.Count} 枚（固定:{fixedCards.Count}, 作成:{CardSaveManager.loadedCards.Length}）");
     }
 
-    public CardData GetRandomCard()
+    // CardInstance[] から CardData[] を返す
+    public CardData[] ToCardDataList(CardInstance[] instances)
     {
-        if (allCards.Count == 0) return null;
-        return allCards[Random.Range(0, allCards.Count)];
+        if (instances == null || instances.Length == 0)
+            return new CardData[0];
+
+        return instances.Select(ci => ci.template).ToArray();
     }
 }

@@ -3,17 +3,13 @@ using UnityEngine;
 
 public class DeckManager : MonoBehaviour
 {
-    void Start()
-    {
-        // CardInstance[] ¨ IEnumerable<CardData>
-        var cardDataList = CardSaveManager.loadedCards.Select(ci => ci.template);
+    public CardInstance[] loadedCards;
 
-        SomeMethodExpectingCardData(cardDataList); // IEnumerable<CardData> ‚ğ“n‚·
-    }
-
-    void SomeMethodExpectingCardData(System.Collections.Generic.IEnumerable<CardData> cards)
+    public CardData[] GetCardDataList()
     {
-        foreach (var card in cards)
-            Debug.Log(card.cardName);
+        if (loadedCards == null || loadedCards.Length == 0) return new CardData[0];
+
+        // CardInstance ‚©‚ç CardData ‚ğæ‚èo‚·
+        return loadedCards.Select(ci => ci.template).ToArray();
     }
 }

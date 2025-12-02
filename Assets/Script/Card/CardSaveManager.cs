@@ -5,9 +5,20 @@ public class CardSaveManager : MonoBehaviour
 {
     public string saveFileName = "cards.json";
     public static CardInstance[] loadedCards; // Åöí«â¡
+
+
+    private CardLoadManager cardLoadManager;
     private void Awake()
     {
-        loadedCards = FindObjectOfType<CardLoadManager>().LoadCards();
+        CardLoadManager loader = FindObjectOfType<CardLoadManager>();
+        if (loader != null)
+        {
+            loadedCards = loader.LoadCards();
+        }
+        else
+        {
+            loadedCards = null; // Ç‹ÇΩÇÕ new CardInstance[0];
+        }
     }
     [System.Serializable]
 

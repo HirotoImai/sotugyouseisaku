@@ -1,37 +1,28 @@
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class CardButtonView : MonoBehaviour
 {
-    public Image cardImage;
-    public Image colorPanel;   // 色をつけたい UI
-    public TextMeshProUGUI nameText;
-    public TextMeshProUGUI costText;
-    public TextMeshProUGUI atkText;
-    public TextMeshProUGUI hpText;
+    [SerializeField] private Image cardImage;
+    [SerializeField] private Text cardNameText;
+    [SerializeField] private Image iconImage;
+    [SerializeField] private TextMeshProUGUI nameText;
     private CardInstance owner;
 
     public void SetOwner(CardInstance card)
     {
         owner = card;
-        // UI 更新など必要に応じて追加
+        UpdateUI();
     }
-    public void Setup(CardInstance card)
+
+    private void UpdateUI()
     {
-        // カード名・能力
-        nameText.text = card.cardName;
-        costText.text = card.cost.ToString();
-        atkText.text = card.attack.ToString();
-        hpText.text = card.hp.ToString();
+        if (owner == null) return;
 
-        // **画像反映**
-        if (card.image != null)
-            cardImage.sprite = card.image;
-
-        // **色反映**
-        colorPanel.color = card.mainColor;
-
-        Debug.Log($"カード:{card.cardName} の色: {card.mainColor}");
+        cardNameText.text = owner.cardName;
+        cardImage.sprite = owner.image;
+        cardImage.color = owner.mainColor;
     }
 }
