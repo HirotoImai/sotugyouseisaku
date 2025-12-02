@@ -3044,9 +3044,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3370550eb25517746a8c3ef662d7da66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nameChanger: {fileID: 769306094}
-  colorImporter: {fileID: 769306095}
-  costManager: {fileID: 769306093}
+  saveFileName: cards.json
+  cardDatasToSave: []
 --- !u!1 &813147315
 GameObject:
   m_ObjectHideFlags: 0
@@ -5397,7 +5396,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 769306097}
         m_TargetAssemblyTypeName: CardSaveManager, Assembly-CSharp
-        m_MethodName: OnClickSave
+        m_MethodName: OnClickSaveButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

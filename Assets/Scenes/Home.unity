@@ -1190,7 +1190,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a57cfe26d0f0c2b449803a8ccee4a30c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerName: "\u30C6\u30B9\u30C8\u592A\u90CE"
+  PlayerName: testtaro-
   PlayerCoins: 100
 --- !u!114 &1064685254
 MonoBehaviour:

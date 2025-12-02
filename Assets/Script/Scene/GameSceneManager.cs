@@ -4,7 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public string PlayerName = "テスト太郎";
+    public string PlayerName = "testtaro-";
     public int PlayerCoins = 100;
 
     private void Awake()

@@ -36,8 +36,8 @@ public class HomeUI : MonoBehaviour
 
     private void UpdateDisplay()
     {
-        playerNameText.text = "プレイヤー: " + GameManager.Instance.PlayerName;
-        coinText.text = "コイン: " + GameManager.Instance.PlayerCoins.ToString();
+        playerNameText.text = "player: " + GameManager.Instance.PlayerName;
+        coinText.text = "coin: " + GameManager.Instance.PlayerCoins.ToString();
     }
 
     // シーンが変わったときに呼ばれる
