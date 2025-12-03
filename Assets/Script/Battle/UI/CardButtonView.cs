@@ -4,19 +4,20 @@ using TMPro;
 
 public class CardButtonView : MonoBehaviour
 {
+    [Header("カード表示")]
     public Image backgroundImage;
     public Image cardImage;
     public TMP_Text cardNameText;
-    public TMP_Text costText; // Cost, Atk, HPなどを表示する用
+    public TMP_Text costText;
     public TMP_Text atkText;
     public TMP_Text hpText;
 
-    private CardData data; // このカードの情報を保持
-    private PlayerManager_RT owner; // クリック時に通知する相手
+    [SerializeField] private CardData data; // private のまま保持
+    private PlayerManager_RT owner;
 
-    public void Setup(CardData data)
+    public void Setup(CardData cardData)
     {
-        this.data = data;
+        data = cardData;
 
         if (cardImage != null)
         {
@@ -35,18 +36,18 @@ public class CardButtonView : MonoBehaviour
 
         if (hpText != null)
             hpText.text = $"HP:{data.hp}";
-
-        // ここで色を確認
-        Debug.Log($"カード: {data.cardName} の色: R={data.mainColor.r}, G={data.mainColor.g}, B={data.mainColor.b}, A={data.mainColor.a}");
     }
 
-    // PlayerManager を外部からセットするためのメソッド
-    public void SetOwner(PlayerManager_RT owner)
+    public void SetOwner(PlayerManager_RT player)
     {
-        this.owner = owner;
+        owner = player;
     }
 
-    // ボタンの OnClick に割り当て
+    public CardData GetCardData()
+    {
+        return data;
+    }
+
     public void OnClick()
     {
         if (data == null)
@@ -56,14 +57,11 @@ public class CardButtonView : MonoBehaviour
         }
 
         if (owner != null)
-        {
             owner.DeployCard(data);
-        }
         else
-        {
-            Debug.Log($"カードをクリック: {data.cardName}（owner未設定）");
-        }
+            Debug.Log($"カードクリック: {data.cardName}（owner未設定）");
     }
+
     public void Highlight(bool enable)
     {
         GetComponent<Image>().color = enable ? Color.yellow : Color.white;

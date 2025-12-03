@@ -1,114 +1,124 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class BattleManager_RT : MonoBehaviour
 {
     public static BattleManager_RT Instance;
 
-    [Header("デッキ＆手札")]
-    public List<CardData> playerDeck = new List<CardData>();
-    public List<CardData> cpuDeck = new List<CardData>();
+    [Header("プレイヤー/CPU管理")]
+    public PlayerManager_RT player;
+    public PlayerManager_RT cpu;
+
+    [Header("デッキ設定")]
+    public int startHandSize = 3;
+
+    // 各陣営の手札
     public List<CardData> playerHand = new List<CardData>();
     public List<CardData> cpuHand = new List<CardData>();
 
     void Awake()
     {
         Instance = this;
+    }
 
-        // デッキ生成（ランダム、重複なし）
+    void Start()
+    {
         InitializeDecks();
     }
 
-    private void InitializeDecks()
+    // =============================
+    // デッキ初期化
+    // =============================
+    public void InitializeDecks()
     {
-        var pool = new List<CardData>(CardDatabase.Instance.allCards);
-
-        if (pool.Count == 0)
+        List<CardData> allCards = CardDatabase.Instance.allCards;
+        if (allCards == null || allCards.Count == 0)
         {
-            Debug.LogWarning("カードプールが空です");
+            Debug.LogError("CardDatabase にカードがありません");
             return;
         }
 
-        // プレイヤーデッキ
-        playerDeck.Clear();
-        var tempPool = new List<CardData>(pool);
-        while (tempPool.Count > 0 && playerDeck.Count < 10) // 任意の枚数
+        // --- Player ---
+        if (player != null)
         {
-            int r = Random.Range(0, tempPool.Count);
-            playerDeck.Add(tempPool[r]);
-            tempPool.RemoveAt(r); // 同じカードが来ないように削除
+            playerHand.Clear();
+
+            // デッキを保存（重要）
+            player.deck = allCards.OrderBy(x => Random.value).ToList();
+
+            // 最初の手札
+            for (int i = 0; i < startHandSize; i++)
+                DrawCard(player, playerHand, player.deck);
+
+            player.UpdateHandUI(playerHand);
         }
 
-        // CPUデッキ
-        cpuDeck.Clear();
-        tempPool = new List<CardData>(pool);
-        while (tempPool.Count > 0 && cpuDeck.Count < 10)
+        // --- CPU ---
+        if (cpu != null)
         {
-            int r = Random.Range(0, tempPool.Count);
-            cpuDeck.Add(tempPool[r]);
-            tempPool.RemoveAt(r);
-        }
+            cpuHand.Clear();
 
-        Debug.Log($"プレイヤーデッキ: {playerDeck.Count}枚, CPUデッキ: {cpuDeck.Count}枚");
+            cpu.deck = allCards.OrderBy(x => Random.value).ToList();
+
+            for (int i = 0; i < startHandSize; i++)
+                DrawCard(cpu, cpuHand, cpu.deck);
+
+            cpu.UpdateHandUI(cpuHand);
+        }
     }
 
-    // --------------------------
-    // 初期手札
-    // --------------------------
-    public void DrawStartHand(PlayerManager_RT owner, int count)
+    // =============================
+    // ドロー処理
+    // =============================
+    private void DrawCard(PlayerManager_RT owner, List<CardData> handList, List<CardData> deck)
     {
-        List<CardData> hand = owner.isPlayer ? playerHand : cpuHand;
-        List<CardData> deck = owner.isPlayer ? playerDeck : cpuDeck;
-
-        for (int i = 0; i < count; i++)
-        {
-            if (deck.Count == 0)
-                break;
-
-            hand.Add(deck[0]);
-            deck.RemoveAt(0);
-        }
-
-        if (hand.Count == 0)
-            Debug.LogWarning($"{(owner.isPlayer ? "プレイヤー" : "CPU")}の手札が空です");
-    }
-
-    // --------------------------
-    // 1枚ドロー
-    // --------------------------
-    public void DrawCard(PlayerManager_RT owner)
-    {
-        List<CardData> hand = owner.isPlayer ? playerHand : cpuHand;
-        List<CardData> deck = owner.isPlayer ? playerDeck : cpuDeck;
-
         if (deck.Count == 0)
         {
-            Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")}のデッキが尽きています");
+            Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} デッキが尽きています");
             return;
         }
 
-        hand.Add(deck[0]);
+        CardData drawn = deck[0];
         deck.RemoveAt(0);
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {hand[hand.Count - 1].cardName} をドロー！");
+        handList.Add(drawn);
+
+        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {drawn.cardName} をドロー");
     }
 
-    // --------------------------
-    // 出撃
-    // --------------------------
+    // =============================
+    // カード出撃
+    // =============================
     public void PlayCard(PlayerManager_RT owner, CardData card)
     {
-        List<CardData> hand = owner.isPlayer ? playerHand : cpuHand;
+        List<CardData> handList = owner.isPlayer ? playerHand : cpuHand;
 
-        if (!hand.Contains(card))
+        if (!handList.Contains(card))
         {
-            Debug.LogWarning("手札に存在しないカードを出撃しようとしています。");
+            Debug.LogWarning("手札に存在しないカードが使われました");
             return;
         }
 
-        hand.Remove(card);
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃！");
+        // プレイヤーのみマナチェック
+        if (owner.isPlayer && !owner.CanPlayCard(card))
+        {
+            Debug.LogWarning("Mana不足でカードを出せません");
+            return;
+        }
 
-        // 出撃後に1枚ドロー
-        DrawCard(owner);
+        // マナ使用
+        if (owner.isPlayer)
+            owner.UseMana(card.cost);
+
+        // 手札から削除
+        handList.Remove(card);
+        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃");
+
+        // 出撃後 自動ドロー
+        DrawCard(owner, handList, owner.deck);
+
+        // UI更新
+        owner.UpdateHandUI(handList);
     }
 }
+

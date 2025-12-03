@@ -13,9 +13,12 @@ public class CardSaveManager : MonoBehaviour
 
     private string savePath;
 
+    // カードロード完了イベント
+    public delegate void OnCardsLoaded();
+    public static event OnCardsLoaded CardsLoadedEvent;
+
     void Awake()
     {
-
         Debug.Log("CardSaveManager Awake");
         savePath = Path.Combine(Application.persistentDataPath, "cards.json");
         Debug.Log($"カードデータ保存先: {savePath}");
@@ -42,7 +45,6 @@ public class CardSaveManager : MonoBehaviour
 
         SaveCardImage(colorImporter.displayImage.sprite.texture, newCard.imagePath);
 
-        // 既存のカードリストをロード
         List<CardDataSerializable> allCards = LoadAllCardSerializable();
         allCards.Add(newCard);
 
@@ -65,18 +67,22 @@ public class CardSaveManager : MonoBehaviour
             Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
             ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
 
-            loadedCards.Add(new CardData
-            {
-                cardName = c.cardName,
-                cost = c.cost,
-                attack = c.attack,
-                hp = c.hp,
-                image = sprite,
-                mainColor = color
-            });
+            // ScriptableObject で生成
+            CardData card = ScriptableObject.CreateInstance<CardData>();
+            card.cardName = c.cardName;
+            card.cost = c.cost;
+            card.attack = c.attack;
+            card.hp = c.hp;
+            card.image = sprite;
+            card.mainColor = color;
+
+            loadedCards.Add(card);
         }
 
         Debug.Log($"カードロード完了: {loadedCards.Count}枚");
+
+        // ロード完了イベント発火
+        CardsLoadedEvent?.Invoke();
     }
 
     List<CardDataSerializable> LoadAllCardSerializable()
@@ -117,15 +123,15 @@ public class CardSaveManager : MonoBehaviour
         Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
         ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
 
-        return new CardData
-        {
-            cardName = c.cardName,
-            cost = c.cost,
-            attack = c.attack,
-            hp = c.hp,
-            image = sprite,
-            mainColor = color
-        };
+        CardData card = ScriptableObject.CreateInstance<CardData>();
+        card.cardName = c.cardName;
+        card.cost = c.cost;
+        card.attack = c.attack;
+        card.hp = c.hp;
+        card.image = sprite;
+        card.mainColor = color;
+
+        return card;
     }
 }
 
@@ -133,7 +139,6 @@ public class CardSaveManager : MonoBehaviour
 public class CardDataListWrapper
 {
     public List<CardDataSerializable> cards;
-
     public CardDataListWrapper(List<CardDataSerializable> cards)
     {
         this.cards = cards;

@@ -28,10 +28,10 @@ public class CardDatabase : MonoBehaviour
 
         // デバッグ用
         Debug.Log($"カードデータ合計: {allCards.Count} 枚（固定:{fixedCards.Count}, 作成:{CardSaveManager.loadedCards.Count}）");
-        foreach (var c in allCards)
-        {
-            Debug.Log($"カード名: {c.cardName}");
-        }
+        //foreach (var c in allCards)
+        //{
+        //    Debug.Log($"カード名: {c.cardName}");
+        //}
     }
 
     public CardData GetRandomCard()
