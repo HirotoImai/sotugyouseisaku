@@ -22,7 +22,7 @@ public class CostManager : MonoBehaviour
 
     void OnCostChanged(int index)
     {
-        totalFP = index * 2;
+        totalFP = (index +1) * 2;
 
         // 最大値を制限（例：0〜totalFP）
         SetDropdownOptions(atack_dropdown, totalFP);

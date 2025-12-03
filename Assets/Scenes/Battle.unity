@@ -153,15 +153,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hpBar: {fileID: 0}
   manaBar: {fileID: 0}
-  handArea: {fileID: 0}
   handButtons: []
-  handCards: []
   maxHP: 100
   currentHP: 0
   maxMana: 100
   currentMana: 0
   isPlayer: 0
-  deck: []
 --- !u!4 &33793818
 Transform:
   m_ObjectHideFlags: 0
@@ -1041,7 +1038,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &981506271
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1497,11 +1494,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c200ce3ade9d48a419e5165641a171a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player1: {fileID: 1858590985}
-  player2: {fileID: 33793817}
-  fieldPlayer1: {fileID: 586891801}
-  fieldPlayer2: {fileID: 981506271}
-  cardViewPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
+  deck: []
+  hand: []
+  playerUnitPrefab: {fileID: 0}
+  enemyUnitPrefab: {fileID: 0}
+  playerSpawnPoint: {fileID: 0}
+  enemySpawnPoint: {fileID: 0}
 --- !u!114 &1117533155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1884,15 +1882,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hpBar: {fileID: 358973999}
   manaBar: {fileID: 493893116}
-  handArea: {fileID: 586891801}
   handButtons: []
-  handCards: []
   maxHP: 20
   currentHP: 20
   maxMana: 20
   currentMana: 0
   isPlayer: 0
-  deck: []
 --- !u!4 &1858590986
 Transform:
   m_ObjectHideFlags: 0

@@ -7,7 +7,9 @@ public class CardButtonView : MonoBehaviour
     public Image backgroundImage;
     public Image cardImage;
     public TMP_Text cardNameText;
-    public TMP_Text statsText; // Cost, Atk, HPなどを表示する用
+    public TMP_Text costText; // Cost, Atk, HPなどを表示する用
+    public TMP_Text atkText;
+    public TMP_Text hpText;
 
     private CardData data; // このカードの情報を保持
     private PlayerManager_RT owner; // クリック時に通知する相手
@@ -25,8 +27,14 @@ public class CardButtonView : MonoBehaviour
         if (cardNameText != null)
             cardNameText.text = data.cardName;
 
-        if (statsText != null)
-            statsText.text = $"Cost:{data.cost}  Atk:{data.attack}  HP:{data.hp}";
+        if (costText != null)
+            costText.text = $"Cost:{data.cost + 1}";
+
+        if (atkText != null)
+            atkText.text = $"Atk:{data.attack}";
+
+        if (hpText != null)
+            hpText.text = $"HP:{data.hp}";
 
         // ここで色を確認
         Debug.Log($"カード: {data.cardName} の色: R={data.mainColor.r}, G={data.mainColor.g}, B={data.mainColor.b}, A={data.mainColor.a}");

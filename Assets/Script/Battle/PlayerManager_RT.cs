@@ -1,22 +1,27 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class PlayerManager_RT : MonoBehaviour
 {
+    [Header("UI")]
     public Slider hpBar;
     public Slider manaBar;
-    public Transform handArea;
-    public CardButtonView[] handButtons;
-    public List<CardData> handCards = new List<CardData>();
 
+    [Header("Hand UI")]
+    public GameObject cardButtonPrefab;
+    public Transform handArea;
+    public int startHandSize = 3;
+
+    [Header("Status")]
     public int maxHP = 100;
     public int currentHP;
     public int maxMana = 100;
-    public int currentMana = 0;
+    public float currentMana = 0f; // float
+    public float manaRegenPerSecond = 5f; // 元の方式
     public bool isPlayer;
 
-    public List<CardData> deck = new List<CardData>();
+    private List<GameObject> handButtons = new List<GameObject>();
 
     void Start()
     {
@@ -27,114 +32,61 @@ public class PlayerManager_RT : MonoBehaviour
         manaBar.maxValue = maxMana;
         manaBar.value = currentMana;
 
-        // デッキ構築・初期手札
-        BuildDeck(10);
-        DrawInitialHand(5);
+        // 初期手札ドロー
+        BattleManager_RT.Instance.DrawStartHand(this, startHandSize);
+        UpdateHandUI();
     }
 
     void Update()
     {
-        // 毎フレームマナ回復
-        currentMana = Mathf.Min(currentMana + 1, maxMana);
-        manaBar.value = currentMana;
-    }
+        // マナ回復（floatで滑らか）
+        currentMana += manaRegenPerSecond * Time.deltaTime;
+        if (currentMana > maxMana)
+            currentMana = maxMana;
 
-    public void Initialize(bool player)
-    {
-        isPlayer = player;
-        DrawInitialHand(5);
+        manaBar.value = currentMana;
     }
 
     public void UpdateHandUI()
     {
-        for (int i = 0; i < handButtons.Length; i++)
+        // 既存のボタンをクリア
+        foreach (var btn in handButtons)
+            Destroy(btn);
+        handButtons.Clear();
+
+        List<CardData> hand = isPlayer ? BattleManager_RT.Instance.playerHand : BattleManager_RT.Instance.cpuHand;
+
+        foreach (var card in hand)
         {
-            if (i < handCards.Count)
-            {
-                handButtons[i].Setup(handCards[i]);
-                handButtons[i].SetOwner(this);
-                handButtons[i].gameObject.SetActive(true);
-            }
-            else
-            {
-                handButtons[i].gameObject.SetActive(false);
-            }
+            GameObject obj = Instantiate(cardButtonPrefab, handArea);
+            CardButtonView view = obj.GetComponent<CardButtonView>();
+            view.Setup(card);
+            view.SetOwner(this);
+            handButtons.Add(obj);
         }
     }
 
-    public void DeployCard(CardData data)
+    public void DeployCard(CardData card)
     {
-        if (currentMana < data.cost)
+        if (currentMana < card.cost)
         {
             Debug.Log("マナ不足！");
             return;
         }
 
-        currentMana -= data.cost;
+        currentMana -= card.cost;
+        manaBar.value = currentMana;
 
-        // 手札から出したカードを削除
-        if (handCards.Contains(data))
-            handCards.Remove(data);
-
-        // デッキから補充（デッキが残っている場合のみ）
-        if (deck.Count > 0)
-        {
-            var newCard = deck[0];
-            deck.RemoveAt(0);
-            handCards.Add(newCard);
-        }
-        else
-        {
-            // デッキが尽きた場合は補充なし
-            Debug.Log("デッキが尽きました");
-        }
-
+        BattleManager_RT.Instance.PlayCard(this, card);
         UpdateHandUI();
-
-        Debug.Log($"{data.cardName}（ATK:{data.attack}）を出撃！");
-        BattleManager_RT.Instance.SpawnCard(data, isPlayer);
     }
 
     public void TakeDamage(int amount)
     {
         currentHP -= amount;
         hpBar.value = currentHP;
+
         if (currentHP <= 0)
-        {
-            Debug.Log(isPlayer ? "プレイヤーの敗北" : "敵の敗北");
-        }
-    }
-
-    // デッキ構築
-    public void BuildDeck(int count = 10)
-    {
-        deck.Clear();
-        var pool = CardDatabase.Instance.allCards;
-
-        if (pool.Count == 0)
-        {
-            Debug.LogError("デッキ生成用カードがありません！");
-            return;
-        }
-
-        for (int i = 0; i < count; i++)
-        {
-            int r = Random.Range(0, pool.Count);
-            deck.Add(pool[r]);
-        }
-    }
-
-    // 初期手札をデッキから順番に引く
-    public void DrawInitialHand(int count)
-    {
-        handCards.Clear();
-        for (int i = 0; i < count && deck.Count > 0; i++)
-        {
-            var card = deck[0];
-            deck.RemoveAt(0);
-            handCards.Add(card);
-        }
-
-        UpdateHandUI();
+            Debug.Log(isPlayer ? "プレイヤーの敗北" : "CPUの敗北");
     }
 }
