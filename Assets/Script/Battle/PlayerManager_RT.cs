@@ -148,7 +148,7 @@ public class PlayerManager_RT : MonoBehaviour
         if (!CanPlayCard(card))
             return false;
 
-        UseMana(card.cost);
+        UseMana(card.cost+1);
         DeployCard(card); // BattleManager�ɒʒm
         return true;
     }

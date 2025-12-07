@@ -131,6 +131,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 33793818}
+  - component: {fileID: 33793819}
   m_Layer: 0
   m_Name: Player2
   m_TagString: Untagged
@@ -153,6 +154,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &33793819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 33793816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 755c3c79937eb0c4cb5cb9e5ab0992db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  handArea: {fileID: 981506271}
+  cardButtonPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
+  isPlayer: 1
+  hpSlider: {fileID: 1035930862}
+  manaSlider: {fileID: 460522575}
+  maxHP: 20
+  maxMana: 10
+  currentHP: 20
+  currentMana: 0
+  manaRegenPerSecond: 1
+  deck: []
 --- !u!1 &122805811
 GameObject:
   m_ObjectHideFlags: 0
@@ -477,7 +501,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 10
+  m_MaxValue: 1
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
@@ -498,7 +522,7 @@ MonoBehaviour:
   slider: {fileID: 1035930862}
   dividerPrefab: {fileID: 8802041219983575975, guid: 1db3e539975098d4882965d8b6d4b302, type: 3}
   dividerParent: {fileID: 1461286113}
-  maxValue: 10
+  maxValue: 1
   regenSpeed: 1
 --- !u!1 &493893114
 GameObject:
@@ -691,7 +715,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 586891801}
-  - component: {fileID: 586891802}
   - component: {fileID: 586891803}
   m_Layer: 5
   m_Name: HandArea
@@ -719,21 +742,6 @@ RectTransform:
   m_AnchoredPosition: {x: -362, y: -196}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &586891802
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586891800}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a069a1bf3de60544a4cd90c5d9db383, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cardButtonPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
-  handArea: {fileID: 586891801}
-  handSize: 3
 --- !u!114 &586891803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -991,7 +999,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 981506271}
-  - component: {fileID: 981506272}
   - component: {fileID: 981506273}
   m_Layer: 5
   m_Name: HandArea
@@ -999,7 +1006,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &981506271
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1016,24 +1023,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -378, y: -202}
+  m_AnchoredPosition: {x: -444, y: -440}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &981506272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 981506270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a069a1bf3de60544a4cd90c5d9db383, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cardButtonPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
-  handArea: {fileID: 981506271}
-  handSize: 3
 --- !u!114 &981506273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1052,7 +1044,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 0
+  m_Spacing: 20
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -1122,7 +1114,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 20
+  m_MaxValue: 1
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
