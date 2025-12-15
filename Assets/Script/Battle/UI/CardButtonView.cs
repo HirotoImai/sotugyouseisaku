@@ -12,7 +12,7 @@ public class CardButtonView : MonoBehaviour
     public TMP_Text atkText;
     public TMP_Text hpText;
 
-    [SerializeField] private CardData data; // private �̂܂ܕێ�
+    public CardData data; // private �̂܂ܕێ�
     private PlayerManager_RT owner;
 
     public void Setup(CardData cardData)

@@ -16,7 +16,8 @@ public class BattleManager_RT : MonoBehaviour
     // 各陣営の手札
     public List<CardData> playerHand = new List<CardData>();
     public List<CardData> cpuHand = new List<CardData>();
-
+    public GameObject unitPrefab;   // 生成するユニットPrefab
+    public Transform fieldArea;
     void Awake()
     {
         Instance = this;
@@ -119,6 +120,17 @@ public class BattleManager_RT : MonoBehaviour
 
         // UI更新
         owner.UpdateHandUI(handList);
+    }
+    private void SpawnUnit(CardData card, PlayerManager_RT owner)
+    {
+        // unitPrefab は CardData に応じて変えられるようにしても良い
+        GameObject unit = Instantiate(unitPrefab, fieldArea);
+
+        // CardData をセットしたり、ステータス反映したり
+        // UnitScript unitScript = unit.GetComponent<UnitScript>();
+        // unitScript.Setup(card, owner);
+
+        Debug.Log("Unit Spawned: " + card.cardName);
     }
 }
 
