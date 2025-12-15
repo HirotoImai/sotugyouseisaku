@@ -1449,11 +1449,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1858590985}
   cpu: {fileID: 0}
+  playerField: {fileID: 1802449021}
+  cpuField: {fileID: 0}
+  unitPrefab: {fileID: 4444813688264425827, guid: b2b7bcae73de1f14cb15062cba59151a, type: 3}
   startHandSize: 5
   playerHand: []
   cpuHand: []
-  unitPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
-  fieldArea: {fileID: 1802449021}
 --- !u!114 &1117533155
 MonoBehaviour:
   m_ObjectHideFlags: 0

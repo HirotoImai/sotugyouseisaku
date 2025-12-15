@@ -10,14 +10,18 @@ public class BattleManager_RT : MonoBehaviour
     public PlayerManager_RT player;
     public PlayerManager_RT cpu;
 
+    [Header("フィールド")]
+    public Transform playerField;
+    public Transform cpuField;
+    public GameObject unitPrefab;
+
     [Header("デッキ設定")]
     public int startHandSize = 3;
 
     // 各陣営の手札
     public List<CardData> playerHand = new List<CardData>();
     public List<CardData> cpuHand = new List<CardData>();
-    public GameObject unitPrefab;   // 生成するユニットPrefab
-    public Transform fieldArea;
+
     void Awake()
     {
         Instance = this;
@@ -114,23 +118,24 @@ public class BattleManager_RT : MonoBehaviour
         // 手札から削除
         handList.Remove(card);
         Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃");
-
+        SpawnUnit(owner, card);
         // 出撃後 自動ドロー
         DrawCard(owner, handList, owner.deck);
 
         // UI更新
         owner.UpdateHandUI(handList);
     }
-    private void SpawnUnit(CardData card, PlayerManager_RT owner)
+    private void SpawnUnit(PlayerManager_RT owner, CardData card)
     {
-        // unitPrefab は CardData に応じて変えられるようにしても良い
-        GameObject unit = Instantiate(unitPrefab, fieldArea);
+        Debug.Log("SpawnUnit 呼ばれました: " + card.cardName);
 
-        // CardData をセットしたり、ステータス反映したり
-        // UnitScript unitScript = unit.GetComponent<UnitScript>();
-        // unitScript.Setup(card, owner);
+        Transform field = owner.isPlayer ? playerField : cpuField;
 
-        Debug.Log("Unit Spawned: " + card.cardName);
+        GameObject unit = Instantiate(unitPrefab, field);
+
+        UnitUI ui = unit.GetComponent<UnitUI>();
+        ui.Setup(card);
     }
+
 }
 
