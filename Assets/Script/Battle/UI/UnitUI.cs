@@ -8,9 +8,10 @@ public class UnitUI : MonoBehaviour
     public TMP_Text nameText;
     public TMP_Text hpText;
     public TMP_Text attackText;
-
-    public void Setup(CardData card)
+    private PlayerManager_RT owner;
+    public void Setup(CardData card, PlayerManager_RT owner)
     {
+        this.owner = owner;
         nameText.text = card.cardName;
         unitImage.sprite = card.image;
         attackText.text = card.attack.ToString();

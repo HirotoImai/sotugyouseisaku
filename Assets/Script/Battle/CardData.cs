@@ -9,4 +9,5 @@ public class CardData : ScriptableObject
     public int attack;
     public int hp;
     public Color mainColor;
+
 }

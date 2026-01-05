@@ -52,15 +52,15 @@ public class PlayerManager_RT : MonoBehaviour
     // -----------------------------
     // 手札UI更新
     // -----------------------------
-    public void UpdateHandUI(List<CardData> handList)
+    public void UpdateHandUI(List<CardInstance> handList)
     {
-        Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] UpdateHandUI start. handList count={handList.Count}");
+        //Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] UpdateHandUI start. handList count={handList.Count}");
 
         // 不要なボタンを削除
         for (int i = handButtons.Count - 1; i >= 0; i--)
         {
             var cbv = handButtons[i].GetComponent<CardButtonView>();
-            if (!handList.Contains(cbv.GetCardData()))
+            if (!handList.Contains(cbv.GetCardInstanc()))
             {
                 Destroy(handButtons[i]);
                 handButtons.RemoveAt(i);
@@ -70,16 +70,18 @@ public class PlayerManager_RT : MonoBehaviour
         // 新しいカードを生成
         foreach (var card in handList)
         {
-            if (!handButtons.Any(b => b.GetComponent<CardButtonView>().GetCardData() == card))
+            if (!handButtons.Any(b =>
+                b.GetComponent<CardButtonView>().GetCardInstance() == card))
             {
                 CreateCardButton(card);
             }
         }
 
-        Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] 手札生成完了: {handButtons.Count}個");
+
+        //Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] 手札生成完了: {handButtons.Count}個");
     }
 
-    private void CreateCardButton(CardData card)
+    private void CreateCardButton(CardInstance card)
     {
         GameObject go = Instantiate(cardButtonPrefab, handArea);
         var cbv = go.GetComponent<CardButtonView>();
@@ -87,6 +89,7 @@ public class PlayerManager_RT : MonoBehaviour
         cbv.SetOwner(this);
         handButtons.Add(go);
     }
+
 
     public void DeployCard(CardData card)
     {

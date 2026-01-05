@@ -9,7 +9,8 @@ public class BattleManager_RT : MonoBehaviour
     [Header("プレイヤー/CPU管理")]
     public PlayerManager_RT player;
     public PlayerManager_RT cpu;
-
+    [Header("CPU設定")]
+    public float cpuThinkInterval = 2f;
     [Header("フィールド")]
     public Transform playerField;
     public Transform cpuField;
@@ -30,6 +31,8 @@ public class BattleManager_RT : MonoBehaviour
     void Start()
     {
         InitializeDecks();
+        if (cpu != null)
+            InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
     }
 
     // =============================
@@ -76,19 +79,17 @@ public class BattleManager_RT : MonoBehaviour
     // =============================
     // ドロー処理
     // =============================
-    private void DrawCard(PlayerManager_RT owner, List<CardData> handList, List<CardData> deck)
+    private void DrawCard(PlayerManager_RT owner,List<CardInstance> handList,List<CardData> deck)
     {
-        if (deck.Count == 0)
-        {
-            Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} デッキが尽きています");
-            return;
-        }
+        if (deck.Count == 0) return;
 
-        CardData drawn = deck[0];
+        CardData baseData = deck[0];
         deck.RemoveAt(0);
-        handList.Add(drawn);
 
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {drawn.cardName} をドロー");
+        // ★ ここがポイント
+        handList.Add(new CardInstance(baseData));
+
+        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {baseData.cardName} をドロー");
     }
 
     // =============================
@@ -117,7 +118,7 @@ public class BattleManager_RT : MonoBehaviour
 
         // 手札から削除
         handList.Remove(card);
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃");
+        //Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃");
         SpawnUnit(owner, card);
         // 出撃後 自動ドロー
         DrawCard(owner, handList, owner.deck);
@@ -125,16 +126,54 @@ public class BattleManager_RT : MonoBehaviour
         // UI更新
         owner.UpdateHandUI(handList);
     }
-    private void SpawnUnit(PlayerManager_RT owner, CardData card)
+    public void SpawnUnit(PlayerManager_RT owner, CardData card)
     {
-        Debug.Log("SpawnUnit 呼ばれました: " + card.cardName);
 
-        Transform field = owner.isPlayer ? playerField : cpuField;
+        Transform parent = owner.isPlayer ? playerField : cpuField;
 
-        GameObject unit = Instantiate(unitPrefab, field);
+        GameObject unit = Instantiate(unitPrefab, parent);
+        Debug.Log($"生成されたUnit: {unit.name}, 親: {parent.name}");
+
 
         UnitUI ui = unit.GetComponent<UnitUI>();
-        ui.Setup(card);
+        ui.Setup(card, owner);
+
+        ArrangeUnits(parent);
+    }
+    private void ArrangeUnits(Transform field)
+    {
+        float spacing = 120f;
+        int count = field.childCount;
+
+        for (int i = 0; i < count; i++)
+        {
+            RectTransform rt = field.GetChild(i).GetComponent<RectTransform>();
+            rt.anchoredPosition = new Vector2(
+                (i - (count - 1) / 2f) * spacing,
+                0
+            );
+        }
+    }
+    private void CPUAction()
+    {
+        if (cpuHand.Count == 0)
+            return;
+
+        // 出せるカードだけ抽出
+        var playableCards = cpuHand
+            .Where(card => cpu.CanPlayCard(card))
+            .ToList();
+
+        if (playableCards.Count == 0)
+            return;
+
+        // 今回はランダムに1枚
+        CardData selected = playableCards[Random.Range(0, playableCards.Count)];
+
+        cpu.TryPlayCard(selected);
+
+        Debug.Log($"[CPU] hand={cpuHand.Count}, mana={cpu.currentMana}");
+
     }
 
 }
