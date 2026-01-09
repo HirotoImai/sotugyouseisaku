@@ -12,30 +12,30 @@ public class CardButtonView : MonoBehaviour
     public TMP_Text atkText;
     public TMP_Text hpText;
 
-    public CardData data; // private のまま保持
+    public CardInstance cardInstance; // private のまま保持
     private PlayerManager_RT owner;
 
-    public void Setup(CardData cardData)
+    public void Setup(CardInstance card)
     {
-        data = cardData;
+        cardInstance = card;
 
         if (cardImage != null)
         {
-            cardImage.sprite = data.image;
-            cardImage.color = data.mainColor;
+            cardImage.sprite = card.data.image;
+            cardImage.color = card.data.mainColor;
         }
 
         if (cardNameText != null)
-            cardNameText.text = data.cardName;
+            cardNameText.text = card.data.cardName;
 
         if (costText != null)
-            costText.text = $"Cost:{data.cost + 1}";
+            costText.text = $"Cost:{card.data.cost + 1}";
 
         if (atkText != null)
-            atkText.text = $"Atk:{data.attack}";
+            atkText.text = $"Atk:{card.data.attack}";
 
         if (hpText != null)
-            hpText.text = $"HP:{data.hp}";
+            hpText.text = $"HP:{card.data.hp}";
     }
 
     public void SetOwner(PlayerManager_RT player)
@@ -43,27 +43,25 @@ public class CardButtonView : MonoBehaviour
         owner = player;
     }
 
-    public CardData GetCardData()
-    {
-        return data;
-    }
+    //public CardData GetCardData()
+    //{
+    //    return card.data;
+    //}
 
     public void OnClick()
     {
-        if (data == null)
+        if (owner == null || cardInstance == null)
         {
-            Debug.LogWarning("CardButtonView: data がセットされていません");
             return;
         }
-
-        if (owner != null)
-            owner.DeployCard(data);
-        else
-            Debug.Log($"カードクリック: {data.cardName}（owner未設定）");
+            owner.TryPlayCard(cardInstance);
+        Debug.Log("true");
     }
 
     public void Highlight(bool enable)
     {
         GetComponent<Image>().color = enable ? Color.yellow : Color.white;
     }
+
+    public CardInstance GetCardInstance() { return cardInstance; }
 }

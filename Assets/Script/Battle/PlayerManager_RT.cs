@@ -60,11 +60,12 @@ public class PlayerManager_RT : MonoBehaviour
         for (int i = handButtons.Count - 1; i >= 0; i--)
         {
             var cbv = handButtons[i].GetComponent<CardButtonView>();
-            if (!handList.Contains(cbv.GetCardInstanc()))
+            if (!handList.Contains(cbv.GetCardInstance()))
             {
                 Destroy(handButtons[i]);
                 handButtons.RemoveAt(i);
             }
+
         }
 
         // 新しいカードを生成
@@ -91,10 +92,7 @@ public class PlayerManager_RT : MonoBehaviour
     }
 
 
-    public void DeployCard(CardData card)
-    {
-        BattleManager_RT.Instance.PlayCard(this, card);
-    }
+
 
     // -----------------------------
     // HP/Mana UI更新
@@ -141,18 +139,19 @@ public class PlayerManager_RT : MonoBehaviour
         currentMana = Mathf.Min(currentMana + amount, maxMana);
         UpdateManaUI();
     }
-    public bool CanPlayCard(CardData card)
+    public bool CanPlayCard(CardInstance card)
     {
-        return currentMana >= card.cost;
+        return currentMana >= card.data.cost;
     }
 
-    public bool TryPlayCard(CardData card)
+    public bool TryPlayCard(CardInstance card)
     {
+
         if (!CanPlayCard(card))
             return false;
+        UseMana(card.data.cost+1);
+        BattleManager_RT.Instance.PlayCard(this, card);
 
-        UseMana(card.cost+1);
-        DeployCard(card); // BattleManagerに通知
         return true;
     }
 

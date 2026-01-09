@@ -6,11 +6,13 @@ public class BattleManager_RT : MonoBehaviour
 {
     public static BattleManager_RT Instance;
 
-    [Header("プレイヤー/CPU管理")]
+    [Header("プレイヤー / CPU")]
     public PlayerManager_RT player;
     public PlayerManager_RT cpu;
+
     [Header("CPU設定")]
     public float cpuThinkInterval = 2f;
+
     [Header("フィールド")]
     public Transform playerField;
     public Transform cpuField;
@@ -19,9 +21,9 @@ public class BattleManager_RT : MonoBehaviour
     [Header("デッキ設定")]
     public int startHandSize = 3;
 
-    // 各陣営の手札
-    public List<CardData> playerHand = new List<CardData>();
-    public List<CardData> cpuHand = new List<CardData>();
+    // ★ 手札は CardInstance で管理
+    public List<CardInstance> playerHand = new();
+    public List<CardInstance> cpuHand = new();
 
     void Awake()
     {
@@ -31,6 +33,7 @@ public class BattleManager_RT : MonoBehaviour
     void Start()
     {
         InitializeDecks();
+
         if (cpu != null)
             InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
     }
@@ -40,34 +43,30 @@ public class BattleManager_RT : MonoBehaviour
     // =============================
     public void InitializeDecks()
     {
-        List<CardData> allCards = CardDatabase.Instance.allCards;
+        var allCards = CardDatabase.Instance.allCards;
         if (allCards == null || allCards.Count == 0)
         {
             Debug.LogError("CardDatabase にカードがありません");
             return;
         }
 
-        // --- Player ---
+        // Player
         if (player != null)
         {
+            player.deck = allCards.OrderBy(_ => Random.value).ToList();
             playerHand.Clear();
 
-            // デッキを保存（重要）
-            player.deck = allCards.OrderBy(x => Random.value).ToList();
-
-            // 最初の手札
             for (int i = 0; i < startHandSize; i++)
                 DrawCard(player, playerHand, player.deck);
 
             player.UpdateHandUI(playerHand);
         }
 
-        // --- CPU ---
+        // CPU
         if (cpu != null)
         {
+            cpu.deck = allCards.OrderBy(_ => Random.value).ToList();
             cpuHand.Clear();
-
-            cpu.deck = allCards.OrderBy(x => Random.value).ToList();
 
             for (int i = 0; i < startHandSize; i++)
                 DrawCard(cpu, cpuHand, cpu.deck);
@@ -77,69 +76,66 @@ public class BattleManager_RT : MonoBehaviour
     }
 
     // =============================
-    // ドロー処理
+    // ドロー
     // =============================
-    private void DrawCard(PlayerManager_RT owner,List<CardInstance> handList,List<CardData> deck)
+    private void DrawCard(
+        PlayerManager_RT owner,
+        List<CardInstance> hand,
+        List<CardData> deck
+    )
     {
         if (deck.Count == 0) return;
 
-        CardData baseData = deck[0];
+        var data = deck[0];
         deck.RemoveAt(0);
 
-        // ★ ここがポイント
-        handList.Add(new CardInstance(baseData));
+        hand.Add(new CardInstance(data));
 
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {baseData.cardName} をドロー");
+        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {data.cardName} をドロー");
     }
 
     // =============================
-    // カード出撃
+    // カード使用
     // =============================
-    public void PlayCard(PlayerManager_RT owner, CardData card)
+    public void PlayCard(PlayerManager_RT owner, CardInstance card)
     {
-        List<CardData> handList = owner.isPlayer ? playerHand : cpuHand;
+        var hand = owner.isPlayer ? playerHand : cpuHand;
 
-        if (!handList.Contains(card))
+        if (!hand.Contains(card))
         {
-            Debug.LogWarning("手札に存在しないカードが使われました");
+            Debug.LogWarning(
+                $"[PlayCard] handに存在しない\n" +
+                $"card={card}\n" +
+                $"handCount={hand.Count}\n" +
+                $"handRefs={string.Join(",", hand.Select(c => c.GetHashCode()))}\n" +
+                $"targetRef={card.GetHashCode()}"
+            );
             return;
         }
 
-        // プレイヤーのみマナチェック
-        if (owner.isPlayer && !owner.CanPlayCard(card))
-        {
-            Debug.LogWarning("Mana不足でカードを出せません");
-            return;
-        }
+        hand.Remove(card);
 
-        // マナ使用
-        if (owner.isPlayer)
-            owner.UseMana(card.cost);
+        SpawnUnit(owner, card.data);
 
-        // 手札から削除
-        handList.Remove(card);
-        //Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {card.cardName} を出撃");
-        SpawnUnit(owner, card);
-        // 出撃後 自動ドロー
-        DrawCard(owner, handList, owner.deck);
-
-        // UI更新
-        owner.UpdateHandUI(handList);
+        DrawCard(owner, hand, owner.deck);
+        owner.UpdateHandUI(hand);
     }
-    public void SpawnUnit(PlayerManager_RT owner, CardData card)
-    {
 
+    // =============================
+    // ユニット生成
+    // =============================
+    private void SpawnUnit(PlayerManager_RT owner, CardData card)
+    {
         Transform parent = owner.isPlayer ? playerField : cpuField;
 
         GameObject unit = Instantiate(unitPrefab, parent);
-        Debug.Log($"生成されたUnit: {unit.name}, 親: {parent.name}");
-
 
         UnitUI ui = unit.GetComponent<UnitUI>();
         ui.Setup(card, owner);
 
         ArrangeUnits(parent);
     }
+
     private void ArrangeUnits(Transform field)
     {
         float spacing = 120f;
@@ -147,34 +143,32 @@ public class BattleManager_RT : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            RectTransform rt = field.GetChild(i).GetComponent<RectTransform>();
+            var rt = field.GetChild(i).GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(
                 (i - (count - 1) / 2f) * spacing,
                 0
             );
         }
     }
+
+    // =============================
+    // CPU 行動
+    // =============================
     private void CPUAction()
     {
-        if (cpuHand.Count == 0)
-            return;
+        Debug.Log($"CPUAction start handCount={cpuHand.Count}");
 
-        // 出せるカードだけ抽出
-        var playableCards = cpuHand
-            .Where(card => cpu.CanPlayCard(card))
-            .ToList();
+        foreach (var card in cpuHand)
+        {
+            Debug.Log($"check card ref={card.GetHashCode()}");
 
-        if (playableCards.Count == 0)
-            return;
-
-        // 今回はランダムに1枚
-        CardData selected = playableCards[Random.Range(0, playableCards.Count)];
-
-        cpu.TryPlayCard(selected);
-
-        Debug.Log($"[CPU] hand={cpuHand.Count}, mana={cpu.currentMana}");
-
+            if (cpu.CanPlayCard(card))
+            {
+                Debug.Log($"CPU selected card ref={card.GetHashCode()}");
+                cpu.TryPlayCard(card);
+                return;
+            }
+        }
     }
 
 }
-

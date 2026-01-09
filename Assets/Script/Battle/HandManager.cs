@@ -21,7 +21,7 @@ public class HandManager : MonoBehaviour
             return;
         }
 
-        List<CardData> handCards = new List<CardData>();
+        List<CardInstance> handCards = new List<CardInstance>();
         List<int> usedIndexes = new List<int>();
 
         for (int i = 0; i < handSize && i < allCards.Count; i++)
@@ -31,10 +31,10 @@ public class HandManager : MonoBehaviour
             while (usedIndexes.Contains(index));
 
             usedIndexes.Add(index);
-            handCards.Add(allCards[index]);
+            handCards.Add(new CardInstance(allCards[index]));
         }
 
-        foreach (var data in handCards)
+        foreach (CardInstance data in handCards)
         {
             GameObject cardObj = Instantiate(cardButtonPrefab, handArea);
             var view = cardObj.GetComponent<CardButtonView>();
