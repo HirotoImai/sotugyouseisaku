@@ -25,6 +25,7 @@ public class PlayerManager_RT : MonoBehaviour
     private List<GameObject> handButtons = new List<GameObject>();
     [Header("ƒfƒbƒL")]
     public List<CardData> deck = new List<CardData>();
+    public List<CardInstance> hand = new List<CardInstance>();
     void Start()
     {
         currentHP = maxHP;
@@ -149,7 +150,7 @@ public class PlayerManager_RT : MonoBehaviour
 
         if (!CanPlayCard(card))
             return false;
-        UseMana(card.data.cost+1);
+        UseMana(card.data.cost);
         BattleManager_RT.Instance.PlayCard(this, card);
 
         return true;

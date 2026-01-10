@@ -1,82 +1,129 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+
+public enum Faction
+{
+    Player,
+    CPU
+}
 
 public class Unit_RT : MonoBehaviour
 {
-    // カード情報
-    private CardData cardData;
-    private bool isPlayer;
+    [Header("陣営")]
+    public Faction faction;
 
-    // ステータス
-    private int currentHP;
-    private int attack;
+    [Header("ステータス")]
+    public int maxHP;
+    public int currentHP;
+    public int attack;
 
-    // UI（任意でユニット上にHPバーなどを表示する場合）
-    public Slider hpBar;
+    [Header("参照")]
+    public PlayerManager_RT owner;
 
-    // 初期化
-    public void Initialize(CardData data, bool player)
+    [Header("攻撃設定")]
+    [SerializeField] private float attackInterval = 1.5f;
+
+    private Coroutine attackCoroutine;
+    private UnitUI ui;
+    // =============================
+    // 初期化（出撃時に必ず呼ばれる）
+    // =============================
+    public void Setup(CardData data, PlayerManager_RT owner)
     {
-        if (data == null)
-        {
-            Debug.LogWarning("Unit_RT.Initialize: CardData が null");
-            return;
-        }
+        this.owner = owner;
+        ui = GetComponent<UnitUI>();
+        faction = owner.isPlayer ? Faction.Player : Faction.CPU;
 
-        cardData = data;
-        isPlayer = player;
-
-        currentHP = data.hp;
+        maxHP = data.hp;
+        currentHP = maxHP;
         attack = data.attack;
 
-        if (hpBar != null)
-        {
-            hpBar.maxValue = data.hp;
-            hpBar.value = currentHP;
-        }
+        Debug.Log(
+            $"[Unit Setup] name={data.cardName}, " +
+            $"faction={faction}, hp={currentHP}, atk={attack}"
+        );
 
-        // 外見（色や画像）もカード情報から反映
-        SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        if (sr != null && data.image != null)
-        {
-            sr.sprite = data.image;
-            sr.color = data.mainColor;
-        }
-
-        Debug.Log($"ユニット初期化: {cardData.cardName} (HP:{currentHP}, ATK:{attack})");
+        attackCoroutine = StartCoroutine(AutoAttackLoop());
     }
 
-    // ---------------------------
-    // ダメージを受ける
-    // ---------------------------
+    // =============================
+    // 自動攻撃ループ
+    // =============================
+    private IEnumerator AutoAttackLoop()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(attackInterval);
+
+            Unit_RT target = GetAttackTarget();
+            if (target == null)
+                continue;
+
+            Attack(target);
+        }
+    }
+
+    // =============================
+    // 攻撃対象取得
+    // =============================
+    private Unit_RT GetAttackTarget()
+    {
+        var bm = BattleManager_RT.Instance;
+
+        List<Unit_RT> enemyUnits =
+            faction == Faction.Player
+            ? bm.cpuUnits
+            : bm.playerUnits;
+
+        if (enemyUnits.Count == 0)
+            return null;
+
+        return enemyUnits[0];
+    }
+
+    // =============================
+    // ダメージ処理
+    // =============================
     public void TakeDamage(int amount)
     {
         currentHP -= amount;
-        if (hpBar != null) hpBar.value = currentHP;
+
+        if (ui != null)
+            ui.UpdateHP(currentHP);   // ★ UI反映
+
+        Debug.Log($"[{name}] ダメージ {amount} 残HP={currentHP}");
 
         if (currentHP <= 0)
-        {
             Die();
-        }
     }
-
-    // ---------------------------
-    // 攻撃処理（例：相手ユニットに攻撃）
-    // ---------------------------
+    // =============================
+    // 攻撃（対象指定）
+    // =============================
     public void Attack(Unit_RT target)
     {
-        if (target == null) return;
+        if (target == null)
+            return;
 
-        Debug.Log($"{cardData.cardName} が {target.cardData.cardName} に {attack} ダメージ！");
+        Debug.Log(
+            $"[{faction}] {name} が " +
+            $"[{target.faction}] {target.name} を攻撃 ({attack})"
+        );
+
         target.TakeDamage(attack);
     }
 
-    // ---------------------------
+    // =============================
     // 死亡処理
-    // ---------------------------
+    // =============================
     private void Die()
     {
-        Debug.Log($"{cardData.cardName} が死亡しました");
+        Debug.Log($"[{faction}] {name} が破壊されました");
+
+        if (attackCoroutine != null)
+            StopCoroutine(attackCoroutine);
+
+        BattleManager_RT.Instance.RemoveUnit(this);
         Destroy(gameObject);
     }
 }

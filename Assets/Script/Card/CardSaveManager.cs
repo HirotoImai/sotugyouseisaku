@@ -36,7 +36,7 @@ public class CardSaveManager : MonoBehaviour
         CardDataSerializable newCard = new CardDataSerializable
         {
             cardName = nameChanger.nameInputField.text,
-            cost = costManager.cost_dropdown.value,
+            cost = costManager.cost_dropdown.value + 1,
             attack = costManager.atack_dropdown.value,
             hp = costManager.hp_dropdown.value,
             color = ColorUtility.ToHtmlStringRGB(colorImporter.displayImage.color),

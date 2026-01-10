@@ -21,10 +21,9 @@ public class BattleManager_RT : MonoBehaviour
     [Header("デッキ設定")]
     public int startHandSize = 3;
 
-    // ★ 手札は CardInstance で管理
-    public List<CardInstance> playerHand = new();
-    public List<CardInstance> cpuHand = new();
-
+    [Header("戦闘ユニット管理")]
+    public List<Unit_RT> playerUnits = new();
+    public List<Unit_RT> cpuUnits = new();
     void Awake()
     {
         Instance = this;
@@ -54,44 +53,40 @@ public class BattleManager_RT : MonoBehaviour
         if (player != null)
         {
             player.deck = allCards.OrderBy(_ => Random.value).ToList();
-            playerHand.Clear();
+            player.hand.Clear();
 
             for (int i = 0; i < startHandSize; i++)
-                DrawCard(player, playerHand, player.deck);
+                DrawCard(player);
 
-            player.UpdateHandUI(playerHand);
+            player.UpdateHandUI(player.hand);
         }
 
         // CPU
         if (cpu != null)
         {
             cpu.deck = allCards.OrderBy(_ => Random.value).ToList();
-            cpuHand.Clear();
+            cpu.hand.Clear();
 
             for (int i = 0; i < startHandSize; i++)
-                DrawCard(cpu, cpuHand, cpu.deck);
+                DrawCard(cpu);
 
-            cpu.UpdateHandUI(cpuHand);
+            cpu.UpdateHandUI(cpu.hand);
         }
     }
 
     // =============================
     // ドロー
     // =============================
-    private void DrawCard(
-        PlayerManager_RT owner,
-        List<CardInstance> hand,
-        List<CardData> deck
-    )
+    private void DrawCard(PlayerManager_RT owner)
     {
-        if (deck.Count == 0) return;
+        if (owner.deck.Count == 0) return;
 
-        var data = deck[0];
-        deck.RemoveAt(0);
+        var data = owner.deck[0];
+        owner.deck.RemoveAt(0);
 
-        hand.Add(new CardInstance(data));
+        owner.hand.Add(new CardInstance(data));
 
-        Debug.Log($"{(owner.isPlayer ? "Player" : "CPU")} が {data.cardName} をドロー");
+        owner.UpdateHandUI(owner.hand);
     }
 
     // =============================
@@ -99,41 +94,43 @@ public class BattleManager_RT : MonoBehaviour
     // =============================
     public void PlayCard(PlayerManager_RT owner, CardInstance card)
     {
-        var hand = owner.isPlayer ? playerHand : cpuHand;
+        var hand = owner.hand;
 
         if (!hand.Contains(card))
         {
             Debug.LogWarning(
-                $"[PlayCard] handに存在しない\n" +
-                $"card={card}\n" +
-                $"handCount={hand.Count}\n" +
-                $"handRefs={string.Join(",", hand.Select(c => c.GetHashCode()))}\n" +
-                $"targetRef={card.GetHashCode()}"
+                $"[PlayCard] handに存在しない"
             );
             return;
         }
 
-        hand.Remove(card);
+        owner.hand.Remove(card);
 
-        SpawnUnit(owner, card.data);
+        SpawnUnit(owner, card);
 
-        DrawCard(owner, hand, owner.deck);
+        DrawCard(owner);
         owner.UpdateHandUI(hand);
     }
 
     // =============================
     // ユニット生成
     // =============================
-    private void SpawnUnit(PlayerManager_RT owner, CardData card)
+    private void SpawnUnit(PlayerManager_RT owner, CardInstance card)
     {
         Transform parent = owner.isPlayer ? playerField : cpuField;
 
         GameObject unit = Instantiate(unitPrefab, parent);
 
         UnitUI ui = unit.GetComponent<UnitUI>();
-        ui.Setup(card, owner);
-
+        ui.Setup(card.data, owner);
+        Unit_RT rt = unit.GetComponent<Unit_RT>();
+        if (owner.isPlayer)
+            playerUnits.Add(rt);
+        else
+            cpuUnits.Add(rt);
         ArrangeUnits(parent);
+        Debug.Log($"SpawnUnit owner={owner.name} isPlayer={owner.isPlayer} parent={parent.name}");
+
     }
 
     private void ArrangeUnits(Transform field)
@@ -150,15 +147,21 @@ public class BattleManager_RT : MonoBehaviour
             );
         }
     }
-
+    public void RemoveUnit(Unit_RT unit)
+    {
+        playerUnits.Remove(unit);
+        cpuUnits.Remove(unit);
+    }
     // =============================
     // CPU 行動
     // =============================
     private void CPUAction()
     {
-        Debug.Log($"CPUAction start handCount={cpuHand.Count}");
+        var hand = cpu.hand; // ← ここが超重要
 
-        foreach (var card in cpuHand)
+        Debug.Log($"CPUAction start handCount={hand.Count}");
+
+        foreach (var card in hand)
         {
             Debug.Log($"check card ref={card.GetHashCode()}");
 
@@ -170,5 +173,6 @@ public class BattleManager_RT : MonoBehaviour
             }
         }
     }
+
 
 }

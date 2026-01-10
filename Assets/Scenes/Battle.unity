@@ -168,7 +168,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   handArea: {fileID: 981506271}
   cardButtonPrefab: {fileID: 7118645887984471763, guid: f7ba15a0fcd35d246bea3eca38110540, type: 3}
-  isPlayer: 1
+  isPlayer: 0
   hpSlider: {fileID: 1035930862}
   manaSlider: {fileID: 460522575}
   maxHP: 20
@@ -177,6 +177,7 @@ MonoBehaviour:
   currentMana: 0
   manaRegenPerSecond: 1
   deck: []
+  hand: []
 --- !u!1 &122805811
 GameObject:
   m_ObjectHideFlags: 0
@@ -1516,8 +1517,8 @@ MonoBehaviour:
   cpuField: {fileID: 909090060}
   unitPrefab: {fileID: 4444813688264425827, guid: b2b7bcae73de1f14cb15062cba59151a, type: 3}
   startHandSize: 5
-  playerHand: []
-  cpuHand: []
+  playerUnits: []
+  cpuUnits: []
 --- !u!114 &1117533155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1973,6 +1974,7 @@ MonoBehaviour:
   currentMana: 0
   manaRegenPerSecond: 1
   deck: []
+  hand: []
 --- !u!4 &1858590986
 Transform:
   m_ObjectHideFlags: 0
