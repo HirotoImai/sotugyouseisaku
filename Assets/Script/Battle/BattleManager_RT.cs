@@ -24,6 +24,12 @@ public class BattleManager_RT : MonoBehaviour
     [Header("戦闘ユニット管理")]
     public List<Unit_RT> playerUnits = new();
     public List<Unit_RT> cpuUnits = new();
+
+    [Header("バトル状態")]
+    public bool isBattleFinished = false;
+
+    [Header("UI")]
+    [SerializeField] private ResultUI resultUI;
     void Awake()
     {
         Instance = this;
@@ -172,6 +178,66 @@ public class BattleManager_RT : MonoBehaviour
                 return;
             }
         }
+    }
+
+    public Unit_RT GetAttackTarget(Unit_RT attacker)
+    {
+        if (attacker == null) return null;
+
+        Transform enemyField =
+            attacker.faction == Faction.Player
+            ? cpuField
+            : playerField;
+
+        if (enemyField == null || enemyField.childCount == 0)
+            return null;
+
+        // 一番手前（index 0）を攻撃対象にする
+        for (int i = 0; i < enemyField.childCount; i++)
+        {
+            var unit = enemyField.GetChild(i).GetComponent<Unit_RT>();
+            if (unit != null)
+                return unit;
+        }
+
+        return null;
+    }
+    public PlayerManager_RT GetEnemyPlayer(Unit_RT attacker)
+    {
+        return attacker.faction == Faction.Player ? cpu : player;
+    }
+    public void CheckBattleResult()
+    {
+        if (isBattleFinished) return;
+
+        if (player.currentHP <= 0)
+        {
+            isBattleFinished = true;
+            Debug.Log("CPU 勝利");
+            OnBattleEnd(false);
+        }
+        else if (cpu.currentHP <= 0)
+        {
+            isBattleFinished = true;
+            Debug.Log("Player 勝利");
+            OnBattleEnd(true);
+        }
+    }
+    private void OnBattleEnd(bool playerWin)
+    {
+        Debug.Log(playerWin ? "=== PLAYER WIN ===" : "=== CPU WIN ===");
+
+        isBattleFinished = true;
+
+        // 勝敗UI表示
+        if (resultUI != null)
+        {
+            resultUI.ShowResult(playerWin);
+        }
+
+        // バトル停止
+        CancelInvoke();
+        Time.timeScale = 0f;
     }
 
 

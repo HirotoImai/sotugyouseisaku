@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public enum Faction
@@ -17,100 +15,115 @@ public class Unit_RT : MonoBehaviour
     public int maxHP;
     public int currentHP;
     public int attack;
-
+    private float lastAttackTime;
+    [Header("攻撃設定")]
+    [SerializeField] private float attackInterval = 5f;
+    private float attackCooldown = 0f;
+    private float attackTimer = 0f;
     [Header("参照")]
     public PlayerManager_RT owner;
 
-    [Header("攻撃設定")]
-    [SerializeField] private float attackInterval = 1.5f;
-
-    private Coroutine attackCoroutine;
-    private UnitUI ui;
+    private bool isDead = false;
+    public CardElement element;
     // =============================
     // 初期化（出撃時に必ず呼ばれる）
     // =============================
     public void Setup(CardData data, PlayerManager_RT owner)
     {
         this.owner = owner;
-        ui = GetComponent<UnitUI>();
         faction = owner.isPlayer ? Faction.Player : Faction.CPU;
 
         maxHP = data.hp;
         currentHP = maxHP;
         attack = data.attack;
+        element = CardElementUtility.GetElement(data.mainColor);
+        attackCooldown = Random.Range(0f, attackInterval); // 同時殴り防止
 
         Debug.Log(
             $"[Unit Setup] name={data.cardName}, " +
             $"faction={faction}, hp={currentHP}, atk={attack}"
         );
+    }
+    void Update()
+    {
+        if (BattleManager_RT.Instance.isBattleFinished) return;
+        if (isDead) return;
 
-        attackCoroutine = StartCoroutine(AutoAttackLoop());
+        attackTimer += Time.deltaTime;
     }
 
     // =============================
-    // 自動攻撃ループ
+    // 攻撃処理（同時ダメージ）
     // =============================
-    private IEnumerator AutoAttackLoop()
+    public void TryAttack(Unit_RT targetUnit, PlayerManager_RT targetPlayer)
     {
-        while (true)
+        // クールタイム
+        if (Time.time < lastAttackTime + attackCooldown)
+            return;
+
+        lastAttackTime = Time.time;
+
+        // ユニット攻撃（相打ち）
+        if (targetUnit != null && targetUnit.currentHP > 0)
         {
-            yield return new WaitForSeconds(attackInterval);
+            int myDamage = attack;
+            int enemyDamage = targetUnit.attack;
 
-            Unit_RT target = GetAttackTarget();
-            if (target == null)
-                continue;
+            targetUnit.TakeDamage(myDamage);
+            TakeDamage(enemyDamage);
+            return;
+        }
 
-            Attack(target);
+        // 本体攻撃
+        if (targetPlayer != null)
+        {
+            targetPlayer.TakeDamage(attack);
         }
     }
-
-    // =============================
-    // 攻撃対象取得
-    // =============================
-    private Unit_RT GetAttackTarget()
+    public void TryAttackBase(PlayerManager_RT targetPlayer)
     {
-        var bm = BattleManager_RT.Instance;
+        if (targetPlayer == null) return;
+        if (isDead) return;
+        if (BattleManager_RT.Instance.isBattleFinished) return;
 
-        List<Unit_RT> enemyUnits =
-            faction == Faction.Player
-            ? bm.cpuUnits
-            : bm.playerUnits;
+        Debug.Log(
+            $"[{faction}] {name} が本体 [{targetPlayer.name}] を攻撃 ({attack})"
+        );
 
-        if (enemyUnits.Count == 0)
-            return null;
-
-        return enemyUnits[0];
+        BattleManager_RT.Instance.DamagePlayer(targetPlayer, attack);
     }
+    public bool CanAttack()
+    {
+        return attackTimer >= attackInterval;
+    }
+
+    public void ResetAttackTimer()
+    {
+        attackTimer = 0f;
+    }
+
 
     // =============================
     // ダメージ処理
     // =============================
     public void TakeDamage(int amount)
     {
+        if (isDead) return;
+
         currentHP -= amount;
+        Debug.Log($"[{faction}] {name} ダメージ {amount} 残HP={currentHP}");
 
+        // UI更新（あれば）
+        var ui = GetComponent<UnitUI>();
         if (ui != null)
-            ui.UpdateHP(currentHP);   // ★ UI反映
-
-        Debug.Log($"[{name}] ダメージ {amount} 残HP={currentHP}");
+        {
+            ui.UpdateHP(currentHP);
+        }
 
         if (currentHP <= 0)
+        {
             Die();
-    }
-    // =============================
-    // 攻撃（対象指定）
-    // =============================
-    public void Attack(Unit_RT target)
-    {
-        if (target == null)
-            return;
-
-        Debug.Log(
-            $"[{faction}] {name} が " +
-            $"[{target.faction}] {target.name} を攻撃 ({attack})"
-        );
-
-        target.TakeDamage(attack);
+        }
     }
 
     // =============================
@@ -118,12 +131,11 @@ public class Unit_RT : MonoBehaviour
     // =============================
     private void Die()
     {
+        if (isDead) return;
+        isDead = true;
+
         Debug.Log($"[{faction}] {name} が破壊されました");
 
-        if (attackCoroutine != null)
-            StopCoroutine(attackCoroutine);
-
-        BattleManager_RT.Instance.RemoveUnit(this);
         Destroy(gameObject);
     }
 }

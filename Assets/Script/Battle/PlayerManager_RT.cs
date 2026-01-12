@@ -115,8 +115,12 @@ public class PlayerManager_RT : MonoBehaviour
     // -----------------------------
     public void TakeDamage(int amount)
     {
+        if (currentHP <= 0) return;
+
         currentHP = Mathf.Max(currentHP - amount, 0);
         UpdateHPUI();
+
+        BattleManager_RT.Instance.CheckBattleResult();
     }
 
     public void Heal(int amount)
