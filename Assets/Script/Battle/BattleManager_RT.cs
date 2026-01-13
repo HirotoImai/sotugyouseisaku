@@ -21,15 +21,18 @@ public class BattleManager_RT : MonoBehaviour
     [Header("デッキ設定")]
     public int startHandSize = 3;
 
-    [Header("戦闘ユニット管理")]
-    public List<Unit_RT> playerUnits = new();
-    public List<Unit_RT> cpuUnits = new();
-
     [Header("バトル状態")]
     public bool isBattleFinished = false;
 
     [Header("UI")]
     [SerializeField] private ResultUI resultUI;
+
+    public List<Unit_RT> GetAllUnits()
+    {
+        return playerField.GetComponentsInChildren<Unit_RT>()
+            .Concat(cpuField.GetComponentsInChildren<Unit_RT>())
+            .ToList();
+    }
     void Awake()
     {
         Instance = this;
@@ -41,6 +44,12 @@ public class BattleManager_RT : MonoBehaviour
 
         if (cpu != null)
             InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
+    }
+    void Update()
+    {
+        if (isBattleFinished) return;
+
+        HandleUnitAttacks();
     }
 
     // =============================
@@ -129,11 +138,6 @@ public class BattleManager_RT : MonoBehaviour
 
         UnitUI ui = unit.GetComponent<UnitUI>();
         ui.Setup(card.data, owner);
-        Unit_RT rt = unit.GetComponent<Unit_RT>();
-        if (owner.isPlayer)
-            playerUnits.Add(rt);
-        else
-            cpuUnits.Add(rt);
         ArrangeUnits(parent);
         Debug.Log($"SpawnUnit owner={owner.name} isPlayer={owner.isPlayer} parent={parent.name}");
 
@@ -152,11 +156,6 @@ public class BattleManager_RT : MonoBehaviour
                 0
             );
         }
-    }
-    public void RemoveUnit(Unit_RT unit)
-    {
-        playerUnits.Remove(unit);
-        cpuUnits.Remove(unit);
     }
     // =============================
     // CPU 行動
@@ -179,29 +178,54 @@ public class BattleManager_RT : MonoBehaviour
             }
         }
     }
-
-    public Unit_RT GetAttackTarget(Unit_RT attacker)
+    public Unit_RT GetFrontEnemyUnit(Unit_RT attacker)
     {
-        if (attacker == null) return null;
-
         Transform enemyField =
-            attacker.faction == Faction.Player
-            ? cpuField
-            : playerField;
+            attacker.faction == Faction.Player ? cpuField : playerField;
 
-        if (enemyField == null || enemyField.childCount == 0)
+        if (enemyField.childCount == 0)
             return null;
 
-        // 一番手前（index 0）を攻撃対象にする
-        for (int i = 0; i < enemyField.childCount; i++)
-        {
-            var unit = enemyField.GetChild(i).GetComponent<Unit_RT>();
-            if (unit != null)
-                return unit;
-        }
-
-        return null;
+        return enemyField.GetChild(0).GetComponent<Unit_RT>();
     }
+    public List<Unit_RT> GetPlayerUnits()
+    {
+        return playerField.GetComponentsInChildren<Unit_RT>().ToList();
+    }
+
+    public List<Unit_RT> GetCpuUnits()
+    {
+        return cpuField.GetComponentsInChildren<Unit_RT>().ToList();
+    }
+
+    void HandleUnitAttacks()
+    {
+        foreach (var unit in GetAllUnits())
+        {
+            if (!unit.CanAttack())
+                continue;
+
+            Transform enemyField =
+                unit.faction == Faction.Player ? cpuField : playerField;
+
+            if (enemyField.childCount > 0)
+            {
+                Unit_RT targetUnit = enemyField.GetChild(0).GetComponent<Unit_RT>();
+                unit.TryAttack(targetUnit);
+            }
+            else
+            {
+                PlayerManager_RT targetPlayer = GetEnemyPlayer(unit);
+                unit.TryAttackBase(targetPlayer);
+            }
+
+
+            unit.ResetAttackTimer();
+        }
+    }
+
+
+
     public PlayerManager_RT GetEnemyPlayer(Unit_RT attacker)
     {
         return attacker.faction == Faction.Player ? cpu : player;

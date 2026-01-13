@@ -1,7 +1,4 @@
 using UnityEngine;
-
-[CreateAssetMenu(fileName = "CardData", menuName = "Game/Card")]
-
 public enum CardElement
 {
     Red,
@@ -10,6 +7,8 @@ public enum CardElement
     Black,
     White
 }
+[CreateAssetMenu(fileName = "CardData", menuName = "Game/Card")]
+
 public class CardData : ScriptableObject
 {
     public string cardName;
