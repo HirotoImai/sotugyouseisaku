@@ -22,20 +22,20 @@ public class CardButtonView : MonoBehaviour
         if (cardImage != null)
         {
             cardImage.sprite = card.data.image;
-            cardImage.color = card.data.mainColor;
+            backgroundImage.color = card.data.mainColor;
         }
 
         if (cardNameText != null)
             cardNameText.text = card.data.cardName;
 
         if (costText != null)
-            costText.text = $"Cost:{card.data.cost + 1}";
+            costText.text = $"{card.data.cost + 1}";
 
         if (atkText != null)
-            atkText.text = $"Atk:{card.data.attack}";
+            atkText.text = $"{card.data.attack}";
 
         if (hpText != null)
-            hpText.text = $"HP:{card.data.hp}";
+            hpText.text = $"{card.data.hp}";
     }
 
     public void SetOwner(PlayerManager_RT player)
@@ -43,10 +43,6 @@ public class CardButtonView : MonoBehaviour
         owner = player;
     }
 
-    //public CardData GetCardData()
-    //{
-    //    return card.data;
-    //}
 
     public void OnClick()
     {
