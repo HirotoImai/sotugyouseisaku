@@ -202,8 +202,8 @@ public class BattleManager_RT : MonoBehaviour
     {
         foreach (var unit in GetAllUnits())
         {
-            if (!unit.CanAttack())
-                continue;
+            if (unit == null) continue;
+            if (!unit.CanAttack()) continue;
 
             Transform enemyField =
                 unit.faction == Faction.Player ? cpuField : playerField;
@@ -211,7 +211,8 @@ public class BattleManager_RT : MonoBehaviour
             if (enemyField.childCount > 0)
             {
                 Unit_RT targetUnit = enemyField.GetChild(0).GetComponent<Unit_RT>();
-                unit.TryAttack(targetUnit);
+                PlayerManager_RT targetPlayer = GetEnemyPlayer(unit);
+                unit.TryAttack(targetUnit,targetPlayer);
             }
             else
             {

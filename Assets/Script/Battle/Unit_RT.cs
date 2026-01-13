@@ -37,7 +37,7 @@ public class Unit_RT : MonoBehaviour
         maxHP = data.hp;
         currentHP = maxHP;
         attack = data.attack;
-        element = CardElementUtility.GetElement(data.mainColor);
+        element = data.element;
 
         attackTimer = Random.Range(0f, attackInterval); // 同時殴り防止
     }
@@ -63,22 +63,61 @@ public class Unit_RT : MonoBehaviour
     // =============================
     // 攻撃処理（同時ダメージ）
     // =============================
-    public void TryAttack(Unit_RT targetUnit)
+    // ユニット同士の攻撃（属性計算あり）
+    public void TryAttack(Unit_RT targetUnit, PlayerManager_RT targetPlayer)
     {
         if (targetUnit == null || targetUnit.currentHP <= 0) return;
 
-        int myDamage = attack;
-        int enemyDamage = targetUnit.attack;
+        // 属性倍率計算
+        float myMultiplier = GetElementMultiplier(this.element, targetUnit.element);
+        float enemyMultiplier = GetElementMultiplier(targetUnit.element, this.element);
+
+        int myDamage = Mathf.RoundToInt(attack * myMultiplier);
+        int enemyDamage = Mathf.RoundToInt(targetUnit.attack * enemyMultiplier);
+
+        // ===== デバッグログ =====
+        Debug.Log(
+            $"[ATTACK] {element} -> {targetUnit.element} | " +
+            $"倍率:{myMultiplier} ダメージ:{myDamage}"
+        );
+        Debug.Log(
+            $"[COUNTER] {targetUnit.element} -> {element} | " +
+            $"倍率:{enemyMultiplier} ダメージ:{enemyDamage}"
+        );
 
         targetUnit.TakeDamage(myDamage);
         TakeDamage(enemyDamage);
     }
+
+
+    // プレイヤー本体への攻撃（属性なし）
     public void TryAttackBase(PlayerManager_RT targetPlayer)
     {
         if (targetPlayer == null) return;
 
+        // 本体は属性補正なし（明示）
+        Debug.Log(
+            $"[BASE ATTACK] {element} -> Player | ダメージ:{attack}"
+        );
+
         targetPlayer.TakeDamage(attack);
     }
+    private float GetElementMultiplier(CardElement attacker, CardElement defender)
+    {
+        // 有利関係
+        if (attacker == CardElement.Red && defender == CardElement.Green) return 1.5f;
+        if (attacker == CardElement.Green && defender == CardElement.Blue) return 1.5f;
+        if (attacker == CardElement.Blue && defender == CardElement.Red) return 1.5f;
+
+        // 不利関係
+        if (attacker == CardElement.Red && defender == CardElement.Blue) return 0.5f;
+        if (attacker == CardElement.Green && defender == CardElement.Red) return 0.5f;
+        if (attacker == CardElement.Blue && defender == CardElement.Green) return 0.5f;
+
+        // 無属性（白・黒）
+        return 1.0f;
+    }
+
     // =============================
     // ダメージ処理
     // =============================
