@@ -1596,6 +1596,8 @@ MonoBehaviour:
   startHandSize: 5
   isBattleFinished: 0
   resultUI: {fileID: 1117533156}
+  cpuPlayChance: 0
+  cpuMinManaRate: 0.3
 --- !u!114 &1117533155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2059,7 +2061,7 @@ MonoBehaviour:
   isPlayer: 1
   hpSlider: {fileID: 358973999}
   manaSlider: {fileID: 493893116}
-  maxHP: 20
+  maxHP: 100
   maxMana: 10
   currentHP: 20
   currentMana: 0

@@ -27,6 +27,11 @@ public class BattleManager_RT : MonoBehaviour
     [Header("UI")]
     [SerializeField] private ResultUI resultUI;
 
+    [Header("CPU 行動調整")]
+    [Range(0f, 1f)]
+    public float cpuPlayChance = 0.8f;   // 出す確率
+
+    public float cpuMinManaRate = 0.3f;
     public List<Unit_RT> GetAllUnits()
     {
         return playerField.GetComponentsInChildren<Unit_RT>()
@@ -139,7 +144,7 @@ public class BattleManager_RT : MonoBehaviour
         UnitUI ui = unit.GetComponent<UnitUI>();
         ui.Setup(card.data, owner);
         ArrangeUnits(parent);
-        Debug.Log($"SpawnUnit owner={owner.name} isPlayer={owner.isPlayer} parent={parent.name}");
+        //Debug.Log($"SpawnUnit owner={owner.name} isPlayer={owner.isPlayer} parent={parent.name}");
 
     }
 
@@ -162,32 +167,27 @@ public class BattleManager_RT : MonoBehaviour
     // =============================
     private void CPUAction()
     {
-        var hand = cpu.hand; // ← ここが超重要
+        if (isBattleFinished) return;
 
-        Debug.Log($"CPUAction start handCount={hand.Count}");
+        // 出すかどうかの確率判定
+        if (Random.value > cpuPlayChance)
+            return;
 
-        foreach (var card in hand)
+        // マナ条件
+        float manaRate = cpu.currentMana / cpu.maxMana;
+        if (manaRate < cpuMinManaRate)
+            return;
+
+        foreach (var card in cpu.hand)
         {
-            Debug.Log($"check card ref={card.GetHashCode()}");
-
             if (cpu.CanPlayCard(card))
             {
-                Debug.Log($"CPU selected card ref={card.GetHashCode()}");
                 cpu.TryPlayCard(card);
                 return;
             }
         }
     }
-    public Unit_RT GetFrontEnemyUnit(Unit_RT attacker)
-    {
-        Transform enemyField =
-            attacker.faction == Faction.Player ? cpuField : playerField;
 
-        if (enemyField.childCount == 0)
-            return null;
-
-        return enemyField.GetChild(0).GetComponent<Unit_RT>();
-    }
     public List<Unit_RT> GetPlayerUnits()
     {
         return playerField.GetComponentsInChildren<Unit_RT>().ToList();
@@ -197,33 +197,56 @@ public class BattleManager_RT : MonoBehaviour
     {
         return cpuField.GetComponentsInChildren<Unit_RT>().ToList();
     }
-
-    void HandleUnitAttacks()
+    public Unit_RT GetFrontUnit(Faction faction)
     {
-        foreach (var unit in GetAllUnits())
+        Transform field =
+            faction == Faction.Player ? playerField : cpuField;
+
+        if (field.childCount == 0)
+            return null;
+
+        return field.GetChild(0).GetComponent<Unit_RT>();
+    }
+
+    public bool IsFrontUnit(Unit_RT unit)
+    {
+        Transform field =
+            unit.faction == Faction.Player ? playerField : cpuField;
+
+        if (field.childCount == 0)
+            return false;
+
+        return field.GetChild(0) == unit.transform;
+    }
+
+    private void HandleUnitAttacks()
+    {
+        Unit_RT playerFront = GetFrontUnit(Faction.Player);
+        Unit_RT cpuFront = GetFrontUnit(Faction.CPU);
+
+        // プレイヤー側前列
+        if (playerFront != null && playerFront.CanAttack())
         {
-            if (unit == null) continue;
-            if (!unit.CanAttack()) continue;
-
-            Transform enemyField =
-                unit.faction == Faction.Player ? cpuField : playerField;
-
-            if (enemyField.childCount > 0)
-            {
-                Unit_RT targetUnit = enemyField.GetChild(0).GetComponent<Unit_RT>();
-                PlayerManager_RT targetPlayer = GetEnemyPlayer(unit);
-                unit.TryAttack(targetUnit,targetPlayer);
-            }
+            if (cpuFront != null)
+                playerFront.TryAttack(cpuFront, cpu);
             else
-            {
-                PlayerManager_RT targetPlayer = GetEnemyPlayer(unit);
-                unit.TryAttackBase(targetPlayer);
-            }
+                playerFront.TryAttackBase(cpu);
+        }
 
-
-            unit.ResetAttackTimer();
+        // CPU側前列
+        if (cpuFront != null && cpuFront.CanAttack())
+        {
+            if (playerFront != null)
+                cpuFront.TryAttack(playerFront, player);
+            else
+                cpuFront.TryAttackBase(player);
         }
     }
+
+
+
+
+
 
 
 

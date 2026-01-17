@@ -19,7 +19,8 @@ public class Unit_RT : MonoBehaviour
     [Header("攻撃設定")]
     [SerializeField] private float attackInterval = 5f;
     private float attackTimer = 0f;
-
+    [SerializeField] private float preAttackRatio = 0.9f;
+    private bool preAttackNotified = false;
     [Header("参照")]
     public PlayerManager_RT owner;
 
@@ -40,14 +41,39 @@ public class Unit_RT : MonoBehaviour
         element = data.element;
 
         attackTimer = Random.Range(0f, attackInterval); // 同時殴り防止
+
+        var ui = GetComponent<UnitUI>();
+        if (ui != null)
+        {
+            ui.UpdateHP(currentHP, maxHP);
+        }
     }
     void Update()
     {
         if (BattleManager_RT.Instance.isBattleFinished) return;
         if (isDead) return;
 
+        // ★ 前列でなければ何もしない
+        if (!BattleManager_RT.Instance.IsFrontUnit(this))
+            return;
+
         attackTimer += Time.deltaTime;
+
+        float rate = attackTimer / attackInterval;
+
+        var ui = GetComponent<UnitUI>();
+        if (ui != null)
+            ui.UpdateAttackGauge(rate);
+
+        // 攻撃直前演出
+        if (!preAttackNotified && rate >= preAttackRatio)
+        {
+            preAttackNotified = true;
+            if (ui != null)
+                ui.PlayPreAttackMotion();
+        }
     }
+
     // =============================
     // 攻撃可否
     // =============================
@@ -59,6 +85,11 @@ public class Unit_RT : MonoBehaviour
     public void ResetAttackTimer()
     {
         attackTimer = 0f;
+        preAttackNotified = false;
+
+        var ui = GetComponent<UnitUI>();
+        if (ui != null)
+            ui.UpdateAttackGauge(0f);
     }
     // =============================
     // 攻撃処理（同時ダメージ）
@@ -87,6 +118,8 @@ public class Unit_RT : MonoBehaviour
 
         targetUnit.TakeDamage(myDamage);
         TakeDamage(enemyDamage);
+
+        ResetAttackTimer();
     }
 
 
@@ -101,6 +134,7 @@ public class Unit_RT : MonoBehaviour
         );
 
         targetPlayer.TakeDamage(attack);
+        ResetAttackTimer();
     }
     private float GetElementMultiplier(CardElement attacker, CardElement defender)
     {
@@ -126,12 +160,13 @@ public class Unit_RT : MonoBehaviour
         if (isDead) return;
 
         currentHP -= amount;
+        currentHP = Mathf.Max(currentHP, 0);
 
-        // UI更新（あれば）
         var ui = GetComponent<UnitUI>();
         if (ui != null)
         {
-            ui.UpdateHP(currentHP);
+            ui.UpdateHP(currentHP, maxHP);
+            ui.ShowDamage(amount);
         }
 
         if (currentHP <= 0)
@@ -139,6 +174,7 @@ public class Unit_RT : MonoBehaviour
             Die();
         }
     }
+
 
     // =============================
     // 死亡処理
