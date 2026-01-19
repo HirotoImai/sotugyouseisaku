@@ -5,8 +5,11 @@ using System.IO;
 
 public class ImageColorImporter : MonoBehaviour
 {
-    public GameObject cardObject;      // 色を変えるオブジェクト
-    public Image displayImage;         // 画像を表示するImageコンポーネント（UI）
+    public GameObject cardObject;
+    public Image displayImage;
+
+    public Color backgroundColor { get; private set; }   // 見た目用
+    public CardElement element { get; private set; }     // ロジック用
 
     public void OnClickSelectImage()
     {
@@ -14,7 +17,8 @@ public class ImageColorImporter : MonoBehaviour
             new ExtensionFilter("Image Files", "png", "jpg", "jpeg")
         };
 
-        string[] paths = StandaloneFileBrowser.OpenFilePanel("画像を選択", "", extensions, false);
+        string[] paths = StandaloneFileBrowser.OpenFilePanel(
+            "画像を選択", "", extensions, false);
 
         if (paths.Length > 0 && !string.IsNullOrEmpty(paths[0]))
         {
@@ -26,42 +30,36 @@ public class ImageColorImporter : MonoBehaviour
     {
         byte[] data = File.ReadAllBytes(path);
         Texture2D tex = new Texture2D(2, 2);
+
         if (!tex.LoadImage(data))
         {
             Debug.LogError("画像読み込み失敗");
             return;
         }
 
-        // Texture2DをSpriteに変換してImageにセット
+        // 画像表示
         if (displayImage != null)
         {
-            Sprite sprite = Sprite.Create(
+            displayImage.sprite = Sprite.Create(
                 tex,
                 new Rect(0, 0, tex.width, tex.height),
-                new Vector2(0.5f, 0.5f));  // ピボットを中心に設定
-            displayImage.sprite = sprite;
-            displayImage.preserveAspect = true; // アスペクト比を保持
+                new Vector2(0.5f, 0.5f)
+            );
+            displayImage.preserveAspect = true;
         }
 
-        // 平均色を計算して色を分類し、カードの色を変える
+        // 平均色 → 属性決定
         Color avgColor = GetAverageColor(tex);
-        Color targetColor = ClassifyColor(avgColor);
+        element = ClassifyElement(avgColor);
+        backgroundColor = ElementToColor(element);
 
-        var sr = cardObject.GetComponent<SpriteRenderer>();
-        if (sr != null)
-        {
-            sr.color = targetColor;
-            return;
-        }
-
-        var img = cardObject.GetComponent<Image>();
-        if (img != null)
-        {
-            img.color = targetColor;
-            return;
-        }
-
-        Debug.LogWarning("対象オブジェクトにSpriteRendererもImageもありません");
+        // 見た目反映
+        if (cardObject.TryGetComponent(out SpriteRenderer sr))
+            sr.color = backgroundColor;
+        else if (cardObject.TryGetComponent(out Image img))
+            img.color = backgroundColor;
+        else
+            Debug.LogWarning("対象オブジェクトにRenderer/Imageがありません");
     }
 
     Color GetAverageColor(Texture2D tex)
@@ -72,7 +70,7 @@ public class ImageColorImporter : MonoBehaviour
 
         foreach (Color c in pixels)
         {
-            if (c.a > 0.1f)  // アルファ値が0.1より大きい（ほぼ透明でない）ピクセルだけ集計
+            if (c.a > 0.1f)
             {
                 r += c.r;
                 g += c.g;
@@ -81,12 +79,11 @@ public class ImageColorImporter : MonoBehaviour
             }
         }
 
-        if (count == 0) return Color.clear; // 透明しかなければ透明を返す（必要に応じて変更）
-
+        if (count == 0) return Color.clear;
         return new Color(r / count, g / count, b / count);
     }
 
-    Color ClassifyColor(Color color)
+    CardElement ClassifyElement(Color color)
     {
         float r = color.r * 255f;
         float g = color.g * 255f;
@@ -99,32 +96,24 @@ public class ImageColorImporter : MonoBehaviour
         if (diffRG <= 10f && diffGB <= 10f && diffBR <= 10f)
         {
             float brightness = (r + g + b) / 3f;
-            if (brightness < 128f)
-            {
-                Debug.Log("分類結果: Black");
-                return Color.black;
-            }
-            else
-            {
-                Debug.Log("分類結果: White");
-                return Color.white;
-            }
+            return brightness < 128f ? CardElement.Black : CardElement.White;
         }
 
-        if (r >= g && r >= b)
+        if (r >= g && r >= b) return CardElement.Red;
+        if (g >= r && g >= b) return CardElement.Green;
+        return CardElement.Blue;
+    }
+
+    Color ElementToColor(CardElement element)
+    {
+        switch (element)
         {
-            Debug.Log("分類結果: Red");
-            return Color.red;
-        }
-        else if (g >= r && g >= b)
-        {
-            Debug.Log("分類結果: Green");
-            return Color.green;
-        }
-        else
-        {
-            Debug.Log("分類結果: Blue");
-            return Color.blue;
+            case CardElement.Red: return Color.red;
+            case CardElement.Green: return Color.green;
+            case CardElement.Blue: return Color.blue;
+            case CardElement.Black: return Color.black;
+            case CardElement.White: return Color.white;
+            default: return Color.white;
         }
     }
 }

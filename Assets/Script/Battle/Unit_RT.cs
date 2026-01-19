@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections;
 public enum Faction
 {
     Player,
@@ -30,6 +30,25 @@ public class Unit_RT : MonoBehaviour
     // =============================
     // 初期化（出撃時に必ず呼ばれる）
     // =============================
+    public void Initialize(CardData data, PlayerManager_RT owner)
+    {
+        this.owner = owner;
+        faction = owner.isPlayer ? Faction.Player : Faction.CPU;
+
+        maxHP = data.hp;
+        currentHP = maxHP;
+        attack = data.attack;
+
+        // ★ ここが重要
+        element = data.element;
+
+        attackTimer = Random.Range(0f, attackInterval);
+
+        var ui = GetComponent<UnitUI>();
+        if (ui != null)
+            ui.UpdateHP(currentHP, maxHP);
+    }
+
     public void Setup(CardData data, PlayerManager_RT owner)
     {
         this.owner = owner;
@@ -39,7 +58,7 @@ public class Unit_RT : MonoBehaviour
         currentHP = maxHP;
         attack = data.attack;
         element = data.element;
-
+        Debug.Log($"[SETUP] {data.cardName} Element = {element}");
         attackTimer = Random.Range(0f, attackInterval); // 同時殴り防止
 
         var ui = GetComponent<UnitUI>();
@@ -97,45 +116,45 @@ public class Unit_RT : MonoBehaviour
     // ユニット同士の攻撃（属性計算あり）
     public void TryAttack(Unit_RT targetUnit, PlayerManager_RT targetPlayer)
     {
-        if (targetUnit == null || targetUnit.currentHP <= 0) return;
+        if (targetUnit == null || targetUnit.currentHP <= 0)
+        {
+            ResetAttackTimer();   // ★ 必ずリセット
+            return;
+        }
 
-        // 属性倍率計算
         float myMultiplier = GetElementMultiplier(this.element, targetUnit.element);
         float enemyMultiplier = GetElementMultiplier(targetUnit.element, this.element);
 
         int myDamage = Mathf.RoundToInt(attack * myMultiplier);
         int enemyDamage = Mathf.RoundToInt(targetUnit.attack * enemyMultiplier);
 
-        // ===== デバッグログ =====
         Debug.Log(
-            $"[ATTACK] {element} -> {targetUnit.element} | " +
-            $"倍率:{myMultiplier} ダメージ:{myDamage}"
-        );
-        Debug.Log(
-            $"[COUNTER] {targetUnit.element} -> {element} | " +
-            $"倍率:{enemyMultiplier} ダメージ:{enemyDamage}"
+            $"[ATTACK] {element} -> {targetUnit.element} | 倍率:{myMultiplier} ダメージ:{myDamage}"
         );
 
         targetUnit.TakeDamage(myDamage);
         TakeDamage(enemyDamage);
 
-        ResetAttackTimer();
+        ResetAttackTimer(); // ★ 成功時もリセット
     }
+
 
 
     // プレイヤー本体への攻撃（属性なし）
     public void TryAttackBase(PlayerManager_RT targetPlayer)
     {
-        if (targetPlayer == null) return;
+        if (targetPlayer == null)
+        {
+            ResetAttackTimer();
+            return;
+        }
 
-        // 本体は属性補正なし（明示）
-        Debug.Log(
-            $"[BASE ATTACK] {element} -> Player | ダメージ:{attack}"
-        );
+        Debug.Log($"[BASE ATTACK] {element} -> Player | ダメージ:{attack}");
 
         targetPlayer.TakeDamage(attack);
         ResetAttackTimer();
     }
+
     private float GetElementMultiplier(CardElement attacker, CardElement defender)
     {
         // 有利関係
@@ -171,10 +190,17 @@ public class Unit_RT : MonoBehaviour
 
         if (currentHP <= 0)
         {
-            Die();
+            StartCoroutine(DieAfterDamage());
         }
     }
 
+    private IEnumerator DieAfterDamage()
+    {
+        // ダメージポップアップが見える時間だけ待つ
+        yield return new WaitForSeconds(0.6f);
+
+        Die();
+    }
 
     // =============================
     // 死亡処理

@@ -139,14 +139,21 @@ public class BattleManager_RT : MonoBehaviour
     {
         Transform parent = owner.isPlayer ? playerField : cpuField;
 
-        GameObject unit = Instantiate(unitPrefab, parent);
+        GameObject unitObj = Instantiate(unitPrefab, parent);
 
-        UnitUI ui = unit.GetComponent<UnitUI>();
+        // š Unit_RT ‚ğ‰Šú‰»
+        Unit_RT unit = unitObj.GetComponent<Unit_RT>();
+        unit.Setup(card.data, owner);
+
+        // UI ‰Šú‰»
+        UnitUI ui = unitObj.GetComponent<UnitUI>();
         ui.Setup(card.data, owner);
-        ArrangeUnits(parent);
-        //Debug.Log($"SpawnUnit owner={owner.name} isPlayer={owner.isPlayer} parent={parent.name}");
 
+        ArrangeUnits(parent);
+
+        Debug.Log($"SpawnUnit Element = {unit.element}");
     }
+
 
     private void ArrangeUnits(Transform field)
     {

@@ -16,6 +16,8 @@ public class PlayerManager_RT : MonoBehaviour
     [Header("ステータス")]
     public Slider hpSlider;
     public Slider manaSlider;
+    public TextMeshProUGUI hpText;
+    public TextMeshProUGUI manaText;
     public int maxHP = 20;
     public float maxMana = 10f;
     public int currentHP = 20;
@@ -102,12 +104,14 @@ public class PlayerManager_RT : MonoBehaviour
     {
         if (hpSlider != null)
             hpSlider.value = Mathf.Clamp01((float)currentHP / maxHP);
+        hpText.text = hpSlider.value.ToString();
     }
 
     public void UpdateManaUI()
     {
         if (manaSlider != null)
             manaSlider.value = Mathf.Clamp01(currentMana / maxMana);
+        manaText.text = manaSlider.value.ToString();
     }
 
     // -----------------------------
