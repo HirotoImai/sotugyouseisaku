@@ -92,13 +92,22 @@ public class Unit_RT : MonoBehaviour
                 ui.PlayPreAttackMotion();
         }
     }
-
+    public float GetAttackRate()
+    {
+        return Mathf.Clamp01(attackTimer / attackInterval);
+    }
+    public void ForceFillGauge()
+    {
+        var ui = GetComponent<UnitUI>();
+        if (ui != null)
+            ui.UpdateAttackGauge(1f);
+    }
     // =============================
     // UŒ‚‰Â”Û
     // =============================
     public bool CanAttack()
     {
-        return attackTimer >= attackInterval;
+        return GetAttackRate() >= 1f;
     }
 
     public void ResetAttackTimer()

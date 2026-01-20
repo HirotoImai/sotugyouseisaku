@@ -104,14 +104,16 @@ public class PlayerManager_RT : MonoBehaviour
     {
         if (hpSlider != null)
             hpSlider.value = Mathf.Clamp01((float)currentHP / maxHP);
-        hpText.text = hpSlider.value.ToString();
+        hpText.text = currentHP.ToString();
     }
 
     public void UpdateManaUI()
     {
+
         if (manaSlider != null)
             manaSlider.value = Mathf.Clamp01(currentMana / maxMana);
-        manaText.text = manaSlider.value.ToString();
+        int manaT = (int)currentMana;
+        manaText.text = manaT.ToString();
     }
 
     // -----------------------------

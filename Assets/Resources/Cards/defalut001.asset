@@ -17,4 +17,5 @@ MonoBehaviour:
   cost: 3
   attack: 2
   hp: 2
-  mainColor: {r: 0, g: 1, b: 0, a: 0}
+  mainColor: {r: 0, g: 1, b: 0, a: 1}
+  element: 1

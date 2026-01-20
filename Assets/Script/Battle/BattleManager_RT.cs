@@ -151,7 +151,7 @@ public class BattleManager_RT : MonoBehaviour
 
         ArrangeUnits(parent);
 
-        Debug.Log($"SpawnUnit Element = {unit.element}");
+        //Debug.Log($"SpawnUnit Element = {unit.element}");
     }
 
 
@@ -234,6 +234,7 @@ public class BattleManager_RT : MonoBehaviour
         // プレイヤー側前列
         if (playerFront != null && playerFront.CanAttack())
         {
+            playerFront.ForceFillGauge();
             if (cpuFront != null)
                 playerFront.TryAttack(cpuFront, cpu);
             else
@@ -243,10 +244,24 @@ public class BattleManager_RT : MonoBehaviour
         // CPU側前列
         if (cpuFront != null && cpuFront.CanAttack())
         {
+            playerFront.ForceFillGauge();
             if (playerFront != null)
                 cpuFront.TryAttack(playerFront, player);
             else
                 cpuFront.TryAttackBase(player);
+        }
+        if (playerFront != null && playerFront.CanAttack())
+        {
+            playerFront.ForceFillGauge();
+
+            var ui = playerFront.GetComponent<UnitUI>();
+            if (ui != null)
+                ui.PlayPreAttackMotion();
+
+            if (cpuFront != null)
+                playerFront.TryAttack(cpuFront, cpu);
+            else
+                playerFront.TryAttackBase(cpu);
         }
     }
 
