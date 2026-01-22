@@ -9,14 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7cbc47f5abd30234782cd64f6ddd3b7e, type: 3}
-  m_Name: defalut003
+  m_Script: {fileID: 11500000, guid: 5834b5087d578d24c926ce20cd31e6d6, type: 3}
+  m_Name: Default Local Group_ContentUpdateGroupSchema
   m_EditorClassIdentifier: 
-  cardID: 14
-  cardName: faiter
-  image: {fileID: 21300000, guid: 5bd7228c524183d4d9b7528b47a29efd, type: 3}
-  cost: 4
-  attack: 3
-  hp: 4
-  mainColor: {r: 0, g: 1, b: 0, a: 1}
-  element: 1
+  m_Group: {fileID: 11400000, guid: 69f414baaef2edb45ba960c93a60e4f3, type: 2}
+  m_StaticContent: 0

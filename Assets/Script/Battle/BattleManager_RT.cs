@@ -12,6 +12,9 @@ public class BattleManager_RT : MonoBehaviour
 
     [Header("CPU設定")]
     public float cpuThinkInterval = 2f;
+    [Range(0f, 1f)]
+    public float cpuPlayChance = 0.8f;
+    public float cpuMinManaRate = 0.3f;
 
     [Header("フィールド")]
     public Transform playerField;
@@ -27,17 +30,6 @@ public class BattleManager_RT : MonoBehaviour
     [Header("UI")]
     [SerializeField] private ResultUI resultUI;
 
-    [Header("CPU 行動調整")]
-    [Range(0f, 1f)]
-    public float cpuPlayChance = 0.8f;   // 出す確率
-
-    public float cpuMinManaRate = 0.3f;
-    public List<Unit_RT> GetAllUnits()
-    {
-        return playerField.GetComponentsInChildren<Unit_RT>()
-            .Concat(cpuField.GetComponentsInChildren<Unit_RT>())
-            .ToList();
-    }
     void Awake()
     {
         Instance = this;
@@ -45,8 +37,12 @@ public class BattleManager_RT : MonoBehaviour
 
     void Start()
     {
-        InitializeDecks();
-
+        // 初期ドロー
+        for (int i = 0; i < startHandSize; i++)
+        {
+            player.DrawCard();
+            cpu.DrawCard();
+        }
         if (cpu != null)
             InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
     }
@@ -56,80 +52,13 @@ public class BattleManager_RT : MonoBehaviour
 
         HandleUnitAttacks();
     }
-
     // =============================
-    // デッキ初期化
-    // =============================
-    public void InitializeDecks()
-    {
-        var allCards = CardDatabase.Instance.allCards;
-        if (allCards == null || allCards.Count == 0)
-        {
-            Debug.LogError("CardDatabase にカードがありません");
-            return;
-        }
-
-        // Player
-        if (player != null)
-        {
-            player.deck = allCards.OrderBy(_ => Random.value).ToList();
-            player.hand.Clear();
-
-            for (int i = 0; i < startHandSize; i++)
-                DrawCard(player);
-
-            player.UpdateHandUI(player.hand);
-        }
-
-        // CPU
-        if (cpu != null)
-        {
-            cpu.deck = allCards.OrderBy(_ => Random.value).ToList();
-            cpu.hand.Clear();
-
-            for (int i = 0; i < startHandSize; i++)
-                DrawCard(cpu);
-
-            cpu.UpdateHandUI(cpu.hand);
-        }
-    }
-
-    // =============================
-    // ドロー
-    // =============================
-    private void DrawCard(PlayerManager_RT owner)
-    {
-        if (owner.deck.Count == 0) return;
-
-        var data = owner.deck[0];
-        owner.deck.RemoveAt(0);
-
-        owner.hand.Add(new CardInstance(data));
-
-        owner.UpdateHandUI(owner.hand);
-    }
-
-    // =============================
-    // カード使用
+    // カード使用（PlayerManager から呼ばれる）
     // =============================
     public void PlayCard(PlayerManager_RT owner, CardInstance card)
     {
-        var hand = owner.hand;
-
-        if (!hand.Contains(card))
-        {
-            Debug.LogWarning(
-                $"[PlayCard] handに存在しない"
-            );
-            return;
-        }
-
-        owner.hand.Remove(card);
-
+        if (isBattleFinished) return;
         SpawnUnit(owner, card);
-
-        DrawCard(owner);
-        owner.UpdateHandUI(hand);
     }
 
     // =============================
@@ -151,7 +80,6 @@ public class BattleManager_RT : MonoBehaviour
 
         ArrangeUnits(parent);
 
-        //Debug.Log($"SpawnUnit Element = {unit.element}");
     }
 
 
@@ -164,9 +92,7 @@ public class BattleManager_RT : MonoBehaviour
         {
             var rt = field.GetChild(i).GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(
-                (i - (count - 1) / 2f) * spacing,
-                0
-            );
+                (i - (count - 1) / 2f) * spacing, 0);
         }
     }
     // =============================
@@ -194,16 +120,9 @@ public class BattleManager_RT : MonoBehaviour
             }
         }
     }
-
-    public List<Unit_RT> GetPlayerUnits()
-    {
-        return playerField.GetComponentsInChildren<Unit_RT>().ToList();
-    }
-
-    public List<Unit_RT> GetCpuUnits()
-    {
-        return cpuField.GetComponentsInChildren<Unit_RT>().ToList();
-    }
+    // =============================
+    // ユニット参照
+    // =============================
     public Unit_RT GetFrontUnit(Faction faction)
     {
         Transform field =
@@ -244,38 +163,24 @@ public class BattleManager_RT : MonoBehaviour
         // CPU側前列
         if (cpuFront != null && cpuFront.CanAttack())
         {
-            playerFront.ForceFillGauge();
+            cpuFront.ForceFillGauge();
             if (playerFront != null)
                 cpuFront.TryAttack(playerFront, player);
             else
                 cpuFront.TryAttackBase(player);
         }
-        if (playerFront != null && playerFront.CanAttack())
-        {
-            playerFront.ForceFillGauge();
-
-            var ui = playerFront.GetComponent<UnitUI>();
-            if (ui != null)
-                ui.PlayPreAttackMotion();
-
-            if (cpuFront != null)
-                playerFront.TryAttack(cpuFront, cpu);
-            else
-                playerFront.TryAttackBase(cpu);
-        }
     }
-
-
-
-
-
-
-
+    // =============================
+    // ユーティリティ
+    // =============================
 
     public PlayerManager_RT GetEnemyPlayer(Unit_RT attacker)
     {
         return attacker.faction == Faction.Player ? cpu : player;
     }
+    // =============================
+    // 勝敗判定
+    // =============================
     public void CheckBattleResult()
     {
         if (isBattleFinished) return;

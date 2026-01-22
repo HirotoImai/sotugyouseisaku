@@ -11,6 +11,7 @@ public enum CardElement
 
 public class CardData : ScriptableObject
 {
+    public int cardID;
     public string cardName;
     public Sprite image;
     public int cost;

@@ -51,8 +51,13 @@ public class CardSaveManager : MonoBehaviour
         }
         CardElement element = colorImporter.element;
         Color color = colorImporter.backgroundColor;
+
+        List<CardDataSerializable> allCards = LoadAllCardSerializable();
+
+        int newID = GetNextCardID(allCards);
         CardDataSerializable newCard = new CardDataSerializable
         {
+            cardID = newID,
             cardName = nameChanger.nameInputField.text,
             cost = costManager.cost_dropdown.value + 1,
             attack = costManager.atack_dropdown.value,
@@ -61,10 +66,8 @@ public class CardSaveManager : MonoBehaviour
             imagePath = "image_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png",
             element = element
         };
-
+        allCards.Add(newCard);
         SaveCardImage(colorImporter.displayImage.sprite.texture, newCard.imagePath);
-
-        List<CardDataSerializable> allCards = LoadAllCardSerializable();
         allCards.Add(newCard);
 
         string json = JsonUtility.ToJson(new CardDataListWrapper(allCards), true);
@@ -88,6 +91,7 @@ public class CardSaveManager : MonoBehaviour
 
             // ScriptableObject Ç≈ê∂ê¨
             CardData card = ScriptableObject.CreateInstance<CardData>();
+            card.cardID = c.cardID;
             card.cardName = c.cardName;
             card.cost = c.cost;
             card.attack = c.attack;
@@ -143,6 +147,7 @@ public class CardSaveManager : MonoBehaviour
         ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
 
         CardData card = ScriptableObject.CreateInstance<CardData>();
+        card.cardID = c.cardID;
         card.cardName = c.cardName;
         card.cost = c.cost;
         card.attack = c.attack;
@@ -151,6 +156,20 @@ public class CardSaveManager : MonoBehaviour
         card.mainColor = color;
         card.element = c.element;
         return card;
+    }
+
+    int GetNextCardID(List<CardDataSerializable> cards)
+    {
+        if (cards.Count == 0)
+            return 1;
+
+        int maxID = 0;
+        foreach (var c in cards)
+        {
+            if (c.cardID > maxID)
+                maxID = c.cardID;
+        }
+        return maxID + 1;
     }
 }
 
@@ -167,6 +186,7 @@ public class CardDataListWrapper
 [System.Serializable]
 public class CardDataSerializable
 {
+    public int cardID;
     public string cardName;
     public int cost;
     public int attack;

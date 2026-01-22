@@ -52,6 +52,14 @@ public class HomeUI : MonoBehaviour
         {
             homeCanvas.enabled = false; // 非表示
         }
+        if (GameManager.Instance.CurrentDeck != null)
+        {
+            // デッキあり表示
+        }
+        else
+        {
+            // 未設定表示
+        }
     }
 
     // 各ボタンから呼ばれる関数

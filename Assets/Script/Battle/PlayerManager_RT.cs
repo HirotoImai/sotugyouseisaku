@@ -10,6 +10,7 @@ public class PlayerManager_RT : MonoBehaviour
     public Transform handArea;
     public GameObject cardButtonPrefab;
 
+    private List<GameObject> handButtons = new();
     [Header("プレイヤー情報")]
     public bool isPlayer = true;
 
@@ -20,14 +21,13 @@ public class PlayerManager_RT : MonoBehaviour
     public TextMeshProUGUI manaText;
     public int maxHP = 20;
     public float maxMana = 10f;
-    public int currentHP = 20;
+    public int currentHP;
     public float currentMana;
     public float manaRegenPerSecond = 1f;
 
-    private List<GameObject> handButtons = new List<GameObject>();
     [Header("デッキ")]
-    public List<CardData> deck = new List<CardData>();
-    public List<CardInstance> hand = new List<CardInstance>();
+    public BattleDeck battleDeck;
+    public List<CardInstance> hand = new();
     void Start()
     {
         currentHP = maxHP;
@@ -37,17 +37,62 @@ public class PlayerManager_RT : MonoBehaviour
     }
     void Update()
     {
-        // 毎フレーム滑らかに回復（1秒で manaRegenPerSecond）
         RegenerateMana(Time.deltaTime);
+    }
+
+    public void Initialize(DeckData deckData)
+    {
+        battleDeck = new BattleDeck(deckData);
+        hand.Clear();
+        ClearHandUI();
+    }
+    // =============================
+    // ドロー
+    // =============================
+    public void DrawCard()
+    {
+        if (battleDeck == null)
+            return;
+        int cardID = battleDeck.Draw();
+        if (cardID < 0) return;
+        CardData data= CardDatabase.Instance.GetCardByID(cardID);
+        hand.Add(new CardInstance(data));
+        UpdateHandUI();
+    }
+    // =============================
+    // カード使用判定
+    // =============================
+    public bool CanPlayCard(CardInstance card)
+    {
+        int cost = battleDeck.GetModifiedCost(card.data);
+        return currentMana >= cost;
+    }
+
+    public bool TryPlayCard(CardInstance card)
+    {
+
+        if (!hand.Contains(card))
+            return false;
+        if (!CanPlayCard(card))
+            return false;
+        int cost = battleDeck.GetModifiedCost(card.data);
+        UseMana(cost);
+        hand.Remove(card);
+        RemoveHandButton(card);
+        BattleManager_RT.Instance.PlayCard(this, card);
+
+        DrawCard();
+        return true;
     }
     private void RegenerateMana(float delta)
     {
-        if (currentMana < maxMana)
-        {
+        if (currentMana >= maxMana)
+
+            return;
+
             currentMana += manaRegenPerSecond * delta;
             if (currentMana > maxMana) currentMana = maxMana;
             UpdateManaUI();
-        }
     }
 
 
@@ -55,15 +100,13 @@ public class PlayerManager_RT : MonoBehaviour
     // -----------------------------
     // 手札UI更新
     // -----------------------------
-    public void UpdateHandUI(List<CardInstance> handList)
+    public void UpdateHandUI()
     {
-        //Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] UpdateHandUI start. handList count={handList.Count}");
-
         // 不要なボタンを削除
         for (int i = handButtons.Count - 1; i >= 0; i--)
         {
-            var cbv = handButtons[i].GetComponent<CardButtonView>();
-            if (!handList.Contains(cbv.GetCardInstance()))
+            var view = handButtons[i].GetComponent<CardButtonView>();
+            if (!hand.Any(h => h == view.cardInstance))
             {
                 Destroy(handButtons[i]);
                 handButtons.RemoveAt(i);
@@ -72,30 +115,43 @@ public class PlayerManager_RT : MonoBehaviour
         }
 
         // 新しいカードを生成
-        foreach (var card in handList)
+        foreach (var instance in hand)
         {
-            if (!handButtons.Any(b =>
-                b.GetComponent<CardButtonView>().GetCardInstance() == card))
+            bool exists = handButtons.Any(b => b.GetComponent<CardButtonView>().cardInstance == instance);
+            if (!exists)
             {
-                CreateCardButton(card);
+                CreateCardButton(instance);
             }
         }
-
-
-        //Debug.Log($"[{(isPlayer ? "Player" : "CPU")}] 手札生成完了: {handButtons.Count}個");
     }
+    void ClearHandUI()
+    {
+        foreach (var go in handButtons)
+            Destroy(go);
 
-    private void CreateCardButton(CardInstance card)
+        handButtons.Clear();
+    }
+    private void CreateCardButton(CardInstance instance)
     {
         GameObject go = Instantiate(cardButtonPrefab, handArea);
         var cbv = go.GetComponent<CardButtonView>();
-        cbv.Setup(card);
+        cbv.Setup(instance);
         cbv.SetOwner(this);
         handButtons.Add(go);
     }
-
-
-
+    void RemoveHandButton(CardInstance instance)
+    {
+        for (int i = handButtons.Count - 1; i >= 0; i--)
+        {
+            var view = handButtons[i].GetComponent<CardButtonView>();
+            if (view.cardInstance == instance)
+            {
+                Destroy(handButtons[i]);
+                handButtons.RemoveAt(i);
+                return;
+            }
+        }
+    }
 
     // -----------------------------
     // HP/Mana UI更新
@@ -129,12 +185,6 @@ public class PlayerManager_RT : MonoBehaviour
         BattleManager_RT.Instance.CheckBattleResult();
     }
 
-    public void Heal(int amount)
-    {
-        currentHP = Mathf.Min(currentHP + amount, maxHP);
-        UpdateHPUI();
-    }
-
     public bool UseMana(float amount)
     {
         if (currentMana < amount)
@@ -144,26 +194,4 @@ public class PlayerManager_RT : MonoBehaviour
         UpdateManaUI();
         return true;
     }
-
-    public void RecoverMana(float amount)
-    {
-        currentMana = Mathf.Min(currentMana + amount, maxMana);
-        UpdateManaUI();
-    }
-    public bool CanPlayCard(CardInstance card)
-    {
-        return currentMana >= card.data.cost;
-    }
-
-    public bool TryPlayCard(CardInstance card)
-    {
-
-        if (!CanPlayCard(card))
-            return false;
-        UseMana(card.data.cost);
-        BattleManager_RT.Instance.PlayCard(this, card);
-
-        return true;
-    }
-
 }
