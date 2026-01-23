@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
     public DeckData CurrentDeck { get; private set; }
     public string PlayerName = "テスト太郎";
     public int PlayerCoins = 100;
-
+    private const string DeckPrefsKey = "SavedDeck";
     private void Awake()
     {
         if (Instance != null)
@@ -15,7 +15,6 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -29,6 +28,25 @@ public class GameManager : MonoBehaviour
             InitializeDefaultDeck();
         }
 
+        LoadDeck();
+    }
+    public void SaveDeck()
+    {
+        if (CurrentDeck == null) return;
+
+        string json = JsonUtility.ToJson(CurrentDeck);
+        PlayerPrefs.SetString(DeckPrefsKey, json);
+        PlayerPrefs.Save();
+        Debug.Log("[GameManager] デッキを保存しました");
+    }
+
+    public void LoadDeck()
+    {
+        if (!PlayerPrefs.HasKey(DeckPrefsKey)) return;
+
+        string json = PlayerPrefs.GetString(DeckPrefsKey);
+        JsonUtility.FromJsonOverwrite(json, CurrentDeck);
+        Debug.Log("[GameManager] デッキをロードしました: " + CurrentDeck.cardIDs.Count + " 枚");
     }
     private void InitializeDefaultDeck()
     {

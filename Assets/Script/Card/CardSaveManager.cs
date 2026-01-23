@@ -8,7 +8,6 @@ public class CardSaveManager : MonoBehaviour
     public NameChanger nameChanger;
     public ImageColorImporter colorImporter;
     public CostManager costManager;
-    public SaveSoundPlayer soundPlayer;
 
     [SerializeField] float saveCooldown = 0.5f;
     float lastSaveTime = -999f;
@@ -29,13 +28,13 @@ public class CardSaveManager : MonoBehaviour
 
         if (colorImporter.displayImage.sprite == null)
         {
-            soundPlayer?.PlayFail();
+            AudioManager.Instance.PlaySaveFail();
             return;
         }
 
         if (costManager.hp_dropdown.value == 0)
         {
-            soundPlayer?.PlayFail();
+            AudioManager.Instance.PlaySaveFail();
             return;
         }
 
@@ -61,7 +60,7 @@ public class CardSaveManager : MonoBehaviour
         // ★ 保存後に全シーン共通データを更新
         CardPersistenceService.Instance.LoadAllCards();
         CardDatabase.Instance.Rebuild();
-        soundPlayer?.PlaySuccess();
+        AudioManager.Instance.PlaySaveSuccess();
         Debug.Log($"[Save] カード保存: {newCard.cardName}");
     }
 

@@ -19,7 +19,6 @@ public class DeckBuildManager : MonoBehaviour
     [SerializeField] private Transform deckArea;
     [SerializeField] private Transform cardListArea;
     [SerializeField] private GameObject deckCardPrefab;
-    public SaveSoundPlayer soundPlayer;
     private void Start()
     {
         CardDatabase.Instance.Rebuild();
@@ -37,7 +36,6 @@ public class DeckBuildManager : MonoBehaviour
 
         if (editingDeck.cardIDs.Count == 0)
             InitializeDefaultDeck();
-
         RefreshCardList();
         RefreshDeckView();
         UpdateDeckCountUI();
@@ -90,6 +88,7 @@ public class DeckBuildManager : MonoBehaviour
 
         if (!editingDeck.CanAddCard(card))
         {
+            AudioManager.Instance.PlaySaveFail();
             Debug.Log("CanAddCard = false");
             return;
         }
@@ -139,24 +138,24 @@ public class DeckBuildManager : MonoBehaviour
         SceneManager.LoadScene("Home");
     }
 
-    public void OnConfirmDeck(int min)
+    public void OnConfirmDeck()
     {
         int count = editingDeck.cardIDs.Count;
         if (count < minDeckCount)
         {
-            soundPlayer?.PlayFail();
+            AudioManager.Instance.PlaySaveFail();
             Debug.Log("デッキ枚数が不足しています");
             return;
         }
-        if (!editingDeck.IsSavable(min))
+        if (!editingDeck.IsSavable(minDeckCount))
         {
-            soundPlayer?.PlayFail();
+            AudioManager.Instance.PlaySaveFail();
             Debug.Log("デッキが未完成です");
             return;
         }
-        soundPlayer?.PlaySuccess();
-        GameManager.Instance.CurrentDeck.cardIDs =
-                new List<int>(editingDeck.cardIDs);
+        GameManager.Instance.CurrentDeck.cardIDs = new List<int>(editingDeck.cardIDs);
+        GameManager.Instance.SaveDeck();
+        AudioManager.Instance.PlaySaveSuccess();
         SceneManager.LoadScene("Home");
     }
 }
