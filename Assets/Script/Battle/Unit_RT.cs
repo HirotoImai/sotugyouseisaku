@@ -65,6 +65,7 @@ public class Unit_RT : MonoBehaviour
         if (ui != null)
         {
             ui.UpdateHP(currentHP, maxHP);
+            ui.UpdateAttackGauge(0f);
         }
     }
     void Update()

@@ -58,6 +58,14 @@ public class PlayerManager_RT : MonoBehaviour
         for (int i = 0; i < initialHandCount; i++)
             DrawCard();
     }
+    public void InitializeCPU(DeckData deckData)
+    {
+        battleDeck = new BattleDeck(deckData);
+        hand.Clear();
+        ClearHandUI();
+        for (int i = 0; i < initialHandCount; i++)
+            DrawCard();
+    }
     // =============================
     // ドロー
     // =============================
@@ -68,8 +76,14 @@ public class PlayerManager_RT : MonoBehaviour
         int cardID = battleDeck.Draw();
         if (cardID < 0) return;
         CardData data= CardDatabase.Instance.GetCardByID(cardID);
+        if (data == null)
+        {
+            Debug.LogError($"CardData が見つかりません: {cardID}");
+            return;
+        }
         hand.Add(new CardInstance(data));
         UpdateHandUI();
+
     }
     // =============================
     // カード使用判定
@@ -136,7 +150,7 @@ public class PlayerManager_RT : MonoBehaviour
             }
         }
     }
-    void ClearHandUI()
+    public void ClearHandUI()
     {
         foreach (var go in handButtons)
             Destroy(go);

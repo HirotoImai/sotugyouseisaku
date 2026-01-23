@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
-
+public static class DeckSaveKeys
+{
+    public const string PlayerDeck = "PlayerDeck";
+    public const string CPUDeck = "CPUDeck";
+}
 [CreateAssetMenu(menuName = "Card/DeckData")]
 public class DeckData : ScriptableObject
 {

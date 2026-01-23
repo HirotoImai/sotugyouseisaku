@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -5,6 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public DeckData CurrentDeck { get; private set; }
+    public DeckData CPUDeck { get; private set; }
     public string PlayerName = "テスト太郎";
     public int PlayerCoins = 100;
     private const string DeckPrefsKey = "SavedDeck";
@@ -29,6 +31,16 @@ public class GameManager : MonoBehaviour
         }
 
         LoadDeck();
+        // CPUデッキ初期化（保存なし）
+        if (CPUDeck == null)
+            CPUDeck = ScriptableObject.CreateInstance<DeckData>();
+
+        if (CPUDeck.cardIDs == null)
+            CPUDeck.InitializeAsEmpty();
+
+        // CPU用の固定デッキをセット
+        CPUDeck.cardIDs = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        Debug.Log("[GameManager] CPUデッキを初期化: " + CPUDeck.cardIDs.Count + " 枚");
     }
     public void SaveDeck()
     {
@@ -57,5 +69,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"[GameManager] Default deck initialized ({CurrentDeck.cardIDs.Count})");
     }
-
+    private List<int> CreateFixedCPUDeck()
+    {
+        return new List<int> { 0,1,2,3,4,5,6,7,8,9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
+    }
 }

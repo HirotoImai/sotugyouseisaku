@@ -14,9 +14,8 @@ public class CardButtonView : MonoBehaviour
 
     public CardInstance cardInstance; // private �̂܂ܕێ�
     private PlayerManager_RT owner;
-    public CardData cardData;
 
-    public int CardID => cardData.cardID;
+    public int CardID => cardInstance.data.cardID;
     public void Setup(CardInstance card)
     {
         cardInstance = card;

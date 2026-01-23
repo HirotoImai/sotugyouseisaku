@@ -37,9 +37,12 @@ public class BattleManager_RT : MonoBehaviour
 
     void Start()
     {
+        Time.timeScale = 1f;
         CardDatabase.Instance.Rebuild();
         player.Initialize(GameManager.Instance.CurrentDeck);
-        cpu.Initialize(GameManager.Instance.CurrentDeck);
+        DeckData cpuDeckData = ScriptableObject.CreateInstance<DeckData>();
+        cpuDeckData.cardIDs = GameManager.Instance.CPUDeck.cardIDs;
+        cpu.InitializeCPU(cpuDeckData);
 
         InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
     }
@@ -72,8 +75,13 @@ public class BattleManager_RT : MonoBehaviour
         unit.Setup(card.data, owner);
 
         UnitUI ui = unitObj.GetComponent<UnitUI>();
-        ui.Setup(card.data, owner);
+        if (ui != null)
 
+        {
+            ui.Setup(card.data, owner);
+            ui.UpdateAttackGauge(0f);
+
+        }
         ArrangeUnits(parent);
     }
 
@@ -191,5 +199,41 @@ public class BattleManager_RT : MonoBehaviour
 
         CancelInvoke();
         Time.timeScale = 0f;
+    }
+    /// <summary>
+    /// バトルを強制終了してホームに戻る
+    /// </summary>
+    public void QuitBattle()
+    {
+        // バトル状態を終了に設定
+        isBattleFinished = true;
+
+        // Time.timeScale を戻す
+        Time.timeScale = 1f;
+
+        // CPUの行動停止
+        CancelInvoke();
+
+        // フィールド上のユニットを削除
+        foreach (Transform t in playerField)
+            Destroy(t.gameObject);
+        foreach (Transform t in cpuField)
+            Destroy(t.gameObject);
+
+        // 手札UIをクリア
+        player.ClearHandUI();
+        cpu.ClearHandUI();
+
+        // 既存のスクリプトでホームに戻る
+        var homeBack = FindObjectOfType<HomeBackUI>();
+        if (homeBack != null)
+        {
+            homeBack.GoToHome();
+        }
+        else
+        {
+            Debug.LogWarning("[BattleManager_RT] HomeBackUI が見つかりません。直接SceneManagerでHomeに戻ります。");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Home");
+        }
     }
 }

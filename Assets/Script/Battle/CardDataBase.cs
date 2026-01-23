@@ -50,6 +50,7 @@ public class CardDatabase : MonoBehaviour
             $"(ŒÅ’è:{fixedCards.Count}, ì¬:{CardPersistenceService.Cards.Count})"
         );
     }
+
     public void Rebuild()
     {
         fixedCards.Clear();
