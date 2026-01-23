@@ -195,6 +195,7 @@ public class Unit_RT : MonoBehaviour
         {
             ui.UpdateHP(currentHP, maxHP);
             ui.ShowDamage(amount);
+            ui.AttackSE();
         }
 
         if (currentHP <= 0)

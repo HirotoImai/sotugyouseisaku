@@ -20,6 +20,8 @@ public class UnitUI : MonoBehaviour
     private RectTransform rect;
     private Vector2 basePos;
     private Unit_RT unit;   // ★ 追加
+    public AudioSource atkse;
+    public AudioClip atkseSound;
     void Awake()
     {
         rect = GetComponent<RectTransform>();
@@ -41,8 +43,11 @@ public class UnitUI : MonoBehaviour
     {
         hpText.text = currentHP.ToString();
     }
-
-    public void ShowDamage(int amount)
+    public void AttackSE()
+    {
+        atkse.PlayOneShot(atkseSound);
+    }
+    public void ShowDamage(int amount, bool isAdvantage = false, Transform attacker = null)
     {
         if (damageText == null) return;
 
@@ -52,10 +57,48 @@ public class UnitUI : MonoBehaviour
         damageText.text = amount.ToString();
         damageText.alpha = 1f;
 
-        RectTransform rect = damageText.rectTransform;
-        Vector2 startPos = rect.anchoredPosition;
+        // 通常色
+        damageText.color = Color.white;
+        damageText.fontStyle = FontStyles.Normal;
+        damageText.fontSize = 36;
 
-        StartCoroutine(DamageAnimation(rect, startPos));
+        if (isAdvantage)
+        {
+            // 派手演出
+            damageText.color = Color.yellow;
+            damageText.fontStyle = FontStyles.Bold;
+            damageText.fontSize = 48;
+            StartCoroutine(DamageAnimationAdvantage(damageText.rectTransform));
+        }
+        else
+        {
+            StartCoroutine(DamageAnimation(damageText.rectTransform, damageText.rectTransform.anchoredPosition));
+        }
+    }
+
+    // 有利攻撃用アニメーション
+    private IEnumerator DamageAnimationAdvantage(RectTransform rect)
+    {
+        Vector2 startPos = rect.anchoredPosition;
+        Vector2 endPos = startPos + Vector2.up * moveUpDistance * 1.5f;
+        float t = 0f;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float rate = t / duration;
+
+            // 弧を描く＋少し跳ねる
+            rect.anchoredPosition = Vector2.Lerp(startPos, endPos, rate)
+                                   + Vector2.up * Mathf.Sin(rate * Mathf.PI) * 15f;
+
+            damageText.alpha = 1f - rate;
+
+            yield return null;
+        }
+
+        rect.anchoredPosition = startPos;
+        damageText.gameObject.SetActive(false);
     }
 
     public void UpdateAttackGauge(float rate)
