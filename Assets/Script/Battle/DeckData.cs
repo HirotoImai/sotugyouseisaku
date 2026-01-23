@@ -60,9 +60,9 @@ public class DeckData : ScriptableObject
         cardIDs.Remove(cardID);
     }
 
-    public bool IsComplete()
+    public bool IsSavable(int min)
     {
-        return cardIDs.Count == MaxDeckSize;
+        return cardIDs.Count >= min;
     }
 }
 

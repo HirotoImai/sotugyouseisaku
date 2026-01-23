@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class DeckBuildManager : MonoBehaviour
 {
@@ -11,27 +12,28 @@ public class DeckBuildManager : MonoBehaviour
 
     [Header("Deck")]
     [SerializeField] private int maxDeckCount = 20;
+    [SerializeField] private int minDeckCount = 10;
     private DeckData editingDeck;
 
     [Header("Deck UI")]
     [SerializeField] private Transform deckArea;
     [SerializeField] private Transform cardListArea;
     [SerializeField] private GameObject deckCardPrefab;
-
+    public SaveSoundPlayer soundPlayer;
     private void Start()
     {
+        CardDatabase.Instance.Rebuild();
         if (GameManager.Instance == null)
         {
             Debug.LogError("GameManager が存在しません");
             return;
         }
 
-        editingDeck = GameManager.Instance.CurrentDeck;
-        if (editingDeck == null)
-        {
-            Debug.LogError("CurrentDeck が null です");
-            return;
-        }
+        editingDeck = ScriptableObject.CreateInstance<DeckData>();
+        editingDeck.cardIDs = new List<int>(
+            GameManager.Instance.CurrentDeck.cardIDs
+        );
+
 
         if (editingDeck.cardIDs.Count == 0)
             InitializeDefaultDeck();
@@ -39,6 +41,7 @@ public class DeckBuildManager : MonoBehaviour
         RefreshCardList();
         RefreshDeckView();
         UpdateDeckCountUI();
+        Debug.Log($"[Deck] 編集後枚数: {editingDeck.cardIDs.Count}");
     }
 
     // =========================
@@ -82,11 +85,15 @@ public class DeckBuildManager : MonoBehaviour
     public void TryAddCard(CardData card)
     {
         Debug.Log($"TryAddCard: {card.cardName}");
+        if (editingDeck.cardIDs.Count >= maxDeckCount)
+            return;
+
         if (!editingDeck.CanAddCard(card))
         {
             Debug.Log("CanAddCard = false");
             return;
         }
+
         editingDeck.AddCard(card);
         RefreshDeckView();
         UpdateDeckCountUI();
@@ -106,7 +113,7 @@ public class DeckBuildManager : MonoBehaviour
     {
         int count = editingDeck.cardIDs.Count;
         deckCountText.text = $"{count} / {maxDeckCount}";
-        confirmButton.interactable = count == DeckData.MaxDeckSize;
+        confirmButton.interactable = count >= minDeckCount;
     }
 
     // =========================
@@ -132,15 +139,24 @@ public class DeckBuildManager : MonoBehaviour
         SceneManager.LoadScene("Home");
     }
 
-    public void OnConfirmDeck()
+    public void OnConfirmDeck(int min)
     {
-        if (!editingDeck.IsComplete())
+        int count = editingDeck.cardIDs.Count;
+        if (count < minDeckCount)
         {
+            soundPlayer?.PlayFail();
+            Debug.Log("デッキ枚数が不足しています");
+            return;
+        }
+        if (!editingDeck.IsSavable(min))
+        {
+            soundPlayer?.PlayFail();
             Debug.Log("デッキが未完成です");
             return;
         }
-
-        DeckSaveManager.Save(editingDeck);
+        soundPlayer?.PlaySuccess();
+        GameManager.Instance.CurrentDeck.cardIDs =
+                new List<int>(editingDeck.cardIDs);
         SceneManager.LoadScene("Home");
     }
 }

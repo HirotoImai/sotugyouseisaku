@@ -5,7 +5,9 @@ using UnityEngine;
 public class CardPersistenceService : MonoBehaviour
 {
     public static CardPersistenceService Instance;
-    public static List<CardData> LoadedCards = new();
+
+    private static List<CardData> loadedCards = new();
+    public static IReadOnlyList<CardData> Cards => loadedCards;
 
     private string savePath;
 
@@ -26,27 +28,37 @@ public class CardPersistenceService : MonoBehaviour
 
     public void LoadAllCards()
     {
-        LoadedCards.Clear();
+        loadedCards.Clear();
 
         if (!File.Exists(savePath))
+        {
+            Debug.Log("[Persistence] 保存ファイルなし");
             return;
+        }
 
         string json = File.ReadAllText(savePath);
         CardDataListWrapper wrapper = JsonUtility.FromJson<CardDataListWrapper>(json);
 
+        if (wrapper?.cards == null)
+            return;
+
         foreach (var c in wrapper.cards)
         {
-            CardData card = CreateCardData(c);
-            LoadedCards.Add(card);
+            loadedCards.Add(CreateCardData(c));
         }
 
-        Debug.Log($"カードロード完了: {LoadedCards.Count}枚");
+        Debug.Log($"[Persistence] カードロード完了: {loadedCards.Count}枚");
     }
 
-    CardData CreateCardData(CardDataSerializable c)
+    private CardData CreateCardData(CardDataSerializable c)
     {
         Texture2D tex = LoadCardImage(c.imagePath);
-        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+        Sprite sprite = Sprite.Create(
+            tex,
+            new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f)
+        );
+
         ColorUtility.TryParseHtmlString("#" + c.color, out Color color);
 
         CardData card = ScriptableObject.CreateInstance<CardData>();
@@ -58,12 +70,14 @@ public class CardPersistenceService : MonoBehaviour
         card.image = sprite;
         card.mainColor = color;
         card.element = c.element;
+
         return card;
     }
 
-    Texture2D LoadCardImage(string fileName)
+    private Texture2D LoadCardImage(string fileName)
     {
         string path = Path.Combine(Application.persistentDataPath, fileName);
+
         if (!File.Exists(path))
             return Texture2D.whiteTexture;
 

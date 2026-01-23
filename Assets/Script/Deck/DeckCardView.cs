@@ -6,9 +6,12 @@ using System;
 public class DeckCardView : MonoBehaviour
 {
     [Header("UI")]
-    [SerializeField] private Image cardImage;
-    [SerializeField] private TMP_Text cardNameText;
-
+    public Image backgroundImage;
+    public Image cardImage;
+    public TMP_Text cardNameText;
+    public TMP_Text costText;
+    public TMP_Text atkText;
+    public TMP_Text hpText;
     private CardData cardData;
     private Action<CardData> onClick;
 
@@ -22,9 +25,18 @@ public class DeckCardView : MonoBehaviour
 
         if (cardImage != null)
             cardImage.sprite = data.image;
-
+        if(backgroundImage != null)
+            backgroundImage.color = data.mainColor;
         if (cardNameText != null)
             cardNameText.text = data.cardName;
+        if (costText != null)
+            costText.text = $"{data.cost + 1}";
+
+        if (atkText != null)
+            atkText.text = $"{data.attack}";
+
+        if (hpText != null)
+            hpText.text = $"{data.hp}";
     }
 
     /// <summary>

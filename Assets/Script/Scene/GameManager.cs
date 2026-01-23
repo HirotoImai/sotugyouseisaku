@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -9,25 +10,34 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
 
         if (CurrentDeck == null)
         {
             CurrentDeck = ScriptableObject.CreateInstance<DeckData>();
             CurrentDeck.InitializeAsEmpty();
         }
+        if (CurrentDeck.cardIDs.Count == 0)
+        {
+            InitializeDefaultDeck();
+        }
 
-        // 保存データがあればここで上書き（DB不要）
-        DeckSaveManager.LoadInto(CurrentDeck);
+    }
+    private void InitializeDefaultDeck()
+    {
+        var cards = CardDatabase.Instance.fixedCards;
+
+        foreach (var card in cards.Take(20))
+            CurrentDeck.cardIDs.Add(card.cardID);
+
+        Debug.Log($"[GameManager] Default deck initialized ({CurrentDeck.cardIDs.Count})");
     }
 
 }

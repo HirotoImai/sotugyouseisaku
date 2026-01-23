@@ -28,12 +28,21 @@ public class PlayerManager_RT : MonoBehaviour
     [Header("デッキ")]
     public BattleDeck battleDeck;
     public List<CardInstance> hand = new();
+    [SerializeField] private int initialHandCount = 5;
     void Start()
     {
+        var deck = GameManager.Instance.CurrentDeck;
+
+        Debug.Log($"[Battle] Deck card count = {deck.cardIDs.Count}");
+        foreach (var id in deck.cardIDs)
+        {
+            Debug.Log($"CardID: {id}");
+        }
         currentHP = maxHP;
         currentMana = 0;
         UpdateHPUI();
         UpdateManaUI();
+        Debug.Log($"[PlayerManager] Start 呼ばれた ({gameObject.name})");
     }
     void Update()
     {
@@ -42,9 +51,12 @@ public class PlayerManager_RT : MonoBehaviour
 
     public void Initialize(DeckData deckData)
     {
+
         battleDeck = new BattleDeck(deckData);
         hand.Clear();
         ClearHandUI();
+        for (int i = 0; i < initialHandCount; i++)
+            DrawCard();
     }
     // =============================
     // ドロー

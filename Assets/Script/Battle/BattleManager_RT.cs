@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class BattleManager_RT : MonoBehaviour
@@ -22,7 +22,7 @@ public class BattleManager_RT : MonoBehaviour
     public GameObject unitPrefab;
 
     [Header("デッキ設定")]
-    public int startHandSize = 3;
+    public int startHandSize = 5; // ★ 最初の手札5枚
 
     [Header("バトル状態")]
     public bool isBattleFinished = false;
@@ -37,23 +37,21 @@ public class BattleManager_RT : MonoBehaviour
 
     void Start()
     {
-        // 初期ドロー
-        for (int i = 0; i < startHandSize; i++)
-        {
-            player.DrawCard();
-            cpu.DrawCard();
-        }
-        if (cpu != null)
-            InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
+        CardDatabase.Instance.Rebuild();
+        player.Initialize(GameManager.Instance.CurrentDeck);
+        cpu.Initialize(GameManager.Instance.CurrentDeck);
+
+        InvokeRepeating(nameof(CPUAction), 2f, cpuThinkInterval);
     }
+
     void Update()
     {
         if (isBattleFinished) return;
-
         HandleUnitAttacks();
     }
+
     // =============================
-    // カード使用（PlayerManager から呼ばれる）
+    // カード使用
     // =============================
     public void PlayCard(PlayerManager_RT owner, CardInstance card)
     {
@@ -70,18 +68,14 @@ public class BattleManager_RT : MonoBehaviour
 
         GameObject unitObj = Instantiate(unitPrefab, parent);
 
-        // ★ Unit_RT を初期化
         Unit_RT unit = unitObj.GetComponent<Unit_RT>();
         unit.Setup(card.data, owner);
 
-        // UI 初期化
         UnitUI ui = unitObj.GetComponent<UnitUI>();
         ui.Setup(card.data, owner);
 
         ArrangeUnits(parent);
-
     }
-
 
     private void ArrangeUnits(Transform field)
     {
@@ -90,11 +84,12 @@ public class BattleManager_RT : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            var rt = field.GetChild(i).GetComponent<RectTransform>();
-            rt.anchoredPosition = new Vector2(
-                (i - (count - 1) / 2f) * spacing, 0);
+            RectTransform rt = field.GetChild(i).GetComponent<RectTransform>();
+            rt.anchoredPosition =
+                new Vector2((i - (count - 1) / 2f) * spacing, 0);
         }
     }
+
     // =============================
     // CPU 行動
     // =============================
@@ -102,13 +97,10 @@ public class BattleManager_RT : MonoBehaviour
     {
         if (isBattleFinished) return;
 
-        // 出すかどうかの確率判定
-        if (Random.value > cpuPlayChance)
+        if (UnityEngine.Random.value > cpuPlayChance)
             return;
 
-        // マナ条件
-        float manaRate = cpu.currentMana / cpu.maxMana;
-        if (manaRate < cpuMinManaRate)
+        if (cpu.currentMana / cpu.maxMana < cpuMinManaRate)
             return;
 
         foreach (var card in cpu.hand)
@@ -120,20 +112,10 @@ public class BattleManager_RT : MonoBehaviour
             }
         }
     }
+
     // =============================
-    // ユニット参照
+    // 前列判定（★ ここが重要）
     // =============================
-    public Unit_RT GetFrontUnit(Faction faction)
-    {
-        Transform field =
-            faction == Faction.Player ? playerField : cpuField;
-
-        if (field.childCount == 0)
-            return null;
-
-        return field.GetChild(0).GetComponent<Unit_RT>();
-    }
-
     public bool IsFrontUnit(Unit_RT unit)
     {
         Transform field =
@@ -145,12 +127,25 @@ public class BattleManager_RT : MonoBehaviour
         return field.GetChild(0) == unit.transform;
     }
 
+    public Unit_RT GetFrontUnit(Faction faction)
+    {
+        Transform field =
+            faction == Faction.Player ? playerField : cpuField;
+
+        if (field.childCount == 0)
+            return null;
+
+        return field.GetChild(0).GetComponent<Unit_RT>();
+    }
+
+    // =============================
+    // 攻撃処理
+    // =============================
     private void HandleUnitAttacks()
     {
         Unit_RT playerFront = GetFrontUnit(Faction.Player);
         Unit_RT cpuFront = GetFrontUnit(Faction.CPU);
 
-        // プレイヤー側前列
         if (playerFront != null && playerFront.CanAttack())
         {
             playerFront.ForceFillGauge();
@@ -160,7 +155,6 @@ public class BattleManager_RT : MonoBehaviour
                 playerFront.TryAttackBase(cpu);
         }
 
-        // CPU側前列
         if (cpuFront != null && cpuFront.CanAttack())
         {
             cpuFront.ForceFillGauge();
@@ -170,14 +164,7 @@ public class BattleManager_RT : MonoBehaviour
                 cpuFront.TryAttackBase(player);
         }
     }
-    // =============================
-    // ユーティリティ
-    // =============================
 
-    public PlayerManager_RT GetEnemyPlayer(Unit_RT attacker)
-    {
-        return attacker.faction == Faction.Player ? cpu : player;
-    }
     // =============================
     // 勝敗判定
     // =============================
@@ -187,33 +174,22 @@ public class BattleManager_RT : MonoBehaviour
 
         if (player.currentHP <= 0)
         {
-            isBattleFinished = true;
-            Debug.Log("CPU 勝利");
-            OnBattleEnd(false);
+            EndBattle(false);
         }
         else if (cpu.currentHP <= 0)
         {
-            isBattleFinished = true;
-            Debug.Log("Player 勝利");
-            OnBattleEnd(true);
+            EndBattle(true);
         }
     }
-    private void OnBattleEnd(bool playerWin)
-    {
-        Debug.Log(playerWin ? "=== PLAYER WIN ===" : "=== CPU WIN ===");
 
+    private void EndBattle(bool playerWin)
+    {
         isBattleFinished = true;
 
-        // 勝敗UI表示
         if (resultUI != null)
-        {
             resultUI.ShowResult(playerWin);
-        }
 
-        // バトル停止
         CancelInvoke();
         Time.timeScale = 0f;
     }
-
-
 }

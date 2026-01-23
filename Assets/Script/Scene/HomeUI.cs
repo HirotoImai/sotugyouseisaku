@@ -24,7 +24,7 @@ public class HomeUI : MonoBehaviour
     private void Start()
     {
         UpdateDisplay();
-
+        CardDatabase.Instance.Rebuild();
         // シーン変更時に呼ばれるイベント登録
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
