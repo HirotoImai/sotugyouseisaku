@@ -2144,7 +2144,7 @@ MonoBehaviour:
   player: {fileID: 1858590985}
   cpu: {fileID: 33793819}
   cpuThinkInterval: 2
-  cpuPlayChance: 0
+  cpuPlayChance: 1
   cpuMinManaRate: 0.3
   playerField: {fileID: 1802449021}
   cpuField: {fileID: 909090060}

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cbc47f5abd30234782cd64f6ddd3b7e, type: 3}
   m_Name: defalut002
   m_EditorClassIdentifier: 
-  cardID: 13
+  cardID: 2
   cardName: thief
   image: {fileID: 21300000, guid: 3652db1fd3397db41b3c4d1a4fe4f61f, type: 3}
   cost: 1

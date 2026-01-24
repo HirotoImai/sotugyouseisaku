@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cbc47f5abd30234782cd64f6ddd3b7e, type: 3}
   m_Name: defalut001
   m_EditorClassIdentifier: 
-  cardID: 12
+  cardID: 1
   cardName: knight
   image: {fileID: 21300000, guid: a702b4f2de8d4ad4bbc69a59cbd90c23, type: 3}
   cost: 3

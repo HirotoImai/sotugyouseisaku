@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cbc47f5abd30234782cd64f6ddd3b7e, type: 3}
   m_Name: defalut003
   m_EditorClassIdentifier: 
-  cardID: 14
+  cardID: 3
   cardName: faiter
   image: {fileID: 21300000, guid: 5bd7228c524183d4d9b7528b47a29efd, type: 3}
   cost: 4

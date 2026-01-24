@@ -69,9 +69,10 @@ public class DeckBuildManager : MonoBehaviour
         foreach (int id in editingDeck.cardIDs)
         {
             CardData card = CardDatabase.Instance.GetCardByID(id);
+            Debug.Log(id);
             if (card == null) continue;
-
             GameObject go = Instantiate(deckCardPrefab, deckArea);
+
             DeckCardView view = go.GetComponent<DeckCardView>();
             view.Setup(card, RemoveCard);
         }
@@ -104,7 +105,17 @@ public class DeckBuildManager : MonoBehaviour
         RefreshDeckView();
         UpdateDeckCountUI();
     }
-
+    //public void AllRemoveCard()
+    //{
+    //    foreach (int id in editingDeck.cardIDs)
+    //    {
+    //        CardData allcard = CardDatabase.Instance.GetCardByID(id);
+    //        if (allcard == null) continue;
+    //        RemoveCard(allcard);
+    //    }
+    //    RefreshDeckView();
+    //    UpdateDeckCountUI();
+    //}
     // =========================
     // UI
     // =========================
